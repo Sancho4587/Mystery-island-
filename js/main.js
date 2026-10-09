@@ -224,5 +224,4 @@ resizeCanvas();
 loadGame();
 requestAnimationFrame(gameLoop);
 
-showMessage("");
 

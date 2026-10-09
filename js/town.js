@@ -40,9 +40,6 @@ export function drawTown(context, canvas, game) {
   drawFlowerBed(context, width * 0.61, height * 0.40, 0.8);
   drawFlowerBed(context, width * 0.76, height * 0.70, 1.0);
 
-  drawFence(context, width * 0.08, height * 0.29, width * 0.32, height * 0.29);
-  drawFence(context, width * 0.58, height * 0.24, width * 0.79, height * 0.24);
-
   drawLamp(context, width * 0.46, height * 0.54, time);
   drawLamp(context, width * 0.59, height * 0.61, time);
 

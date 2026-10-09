@@ -44,17 +44,8 @@ const collision = createCollision(canvas);
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
 
-  function insidePlayableArea(point) {
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-
-    // Temporary safe limits until collision.js is added.
-    return (
-      point.x >= PLAYER_RADIUS &&
-      point.x <= width - PLAYER_RADIUS &&
-      point.y >= 95 &&
-      point.y <= height - 100
-    );
+    function insidePlayableArea(point) {
+    return !collision.isBlocked(point.x, point.y);
   }
 
   function beginDrawing(event) {
@@ -174,7 +165,17 @@ const collision = createCollision(canvas);
       const player = game.player;
       const gap = distance(player, target);
 
+      
       if (gap <= remainingMovement) {
+        if (!collision.canMove(
+          player.x, player.y,
+          target.x, target.y
+        )) {
+          state.moving = false;
+          state.route = [];
+          break;
+        }
+
         player.x = target.x;
         player.y = target.y;
 
@@ -187,17 +188,34 @@ const collision = createCollision(canvas);
           break;
         }
       } else {
-        player.x += (target.x - player.x) / gap * remainingMovement;
-        player.y += (target.y - player.y) / gap * remainingMovement;
+        const nextX = player.x +
+          (target.x - player.x) / gap * remainingMovement;
+        const nextY = player.y +
+          (target.y - player.y) / gap * remainingMovement;
+
+        if (!collision.canMove(
+          player.x, player.y,
+          nextX, nextY
+        )) {
+          state.moving = false;
+          state.route = [];
+          break;
+        }
+
+        player.x = nextX;
+        player.y = nextY;
         remainingMovement = 0;
       }
+
     }
   }
 
   function draw(timestamp) {
-    if (!state.drawing && !state.moving && !state.endpoint) {
-      return;
-    }
+  collision.draw(context);
+
+  if (!state.drawing && !state.moving && !state.endpoint) {
+    return;
+  }
 
     const points = state.moving
       ? [

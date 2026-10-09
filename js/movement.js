@@ -1,11 +1,12 @@
-
+import { createCollision } from "./collision.js";
 /*
  * MYSTERY ISLAND
  * Finger-drawn movement system
  * Version 0.3
  */
 
-export function createMovement(canvas, context, game) {
+export function createMovement(canvas, context, game) { 
+const collision = createCollision(canvas);
   const state = {
     drawing: false,
     moving: false,

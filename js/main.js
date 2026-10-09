@@ -1,4 +1,5 @@
 import { createMovement } from "./movement.js";
+import { drawTown } from "./town.js";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
  * Main application entry point
@@ -110,42 +111,11 @@ function renderMap() {
     "Остальные территории откроются по мере исследования.";
 }
 
+
 function drawTemporaryWorld() {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-
-  context.clearRect(0, 0, width, height);
-
-  context.fillStyle = "#91bb80";
-  context.fillRect(0, 0, width, height);
-
-  context.fillStyle = "#d9c49a";
-  context.beginPath();
-  context.moveTo(0, height * 0.62);
-  context.bezierCurveTo(
-    width * 0.3, height * 0.48,
-    width * 0.55, height * 0.72,
-    width, height * 0.5
-  );
-  context.lineTo(width, height * 0.65);
-  context.bezierCurveTo(
-    width * 0.5, height * 0.85,
-    width * 0.25, height * 0.62,
-    0, height * 0.75
-  );
-  context.closePath();
-  context.fill();
-
-  // Temporary heroine marker.
-  context.fillStyle = "#355f9b";
-  context.beginPath();
-  context.arc(game.player.x, game.player.y, 13, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "#ffffff";
-  context.font = "14px sans-serif";
-  context.fillText("Родной город", 20, height * 0.35);
+  drawTown(context, canvas, game);
 }
+
 
 const movement = createMovement(canvas, context, game);
 

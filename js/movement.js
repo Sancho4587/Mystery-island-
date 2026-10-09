@@ -211,7 +211,6 @@ const collision = createCollision(canvas);
   }
 
   function draw(timestamp) {
-  collision.draw(context);
 
   if (!state.drawing && !state.moving && !state.endpoint) {
     return;

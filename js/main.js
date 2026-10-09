@@ -1,4 +1,4 @@
-
+import { createMovement } from "./movement.js";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
  * Main application entry point
@@ -147,9 +147,14 @@ function drawTemporaryWorld() {
   context.fillText("Родной город", 20, height * 0.35);
 }
 
-function gameLoop() {
+const movement = createMovement(canvas, context, game);
+
+function gameLoop(timestamp) {
+  movement.update(timestamp);
+
   if (game.running) {
     drawTemporaryWorld();
+    movement.draw(timestamp);
   }
 
   requestAnimationFrame(gameLoop);
@@ -247,7 +252,7 @@ window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 loadGame();
-gameLoop();
+requestAnimationFrame(gameLoop);
 
 showMessage("Добро пожаловать в Mystery Island!");
 

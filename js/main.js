@@ -1,5 +1,5 @@
 import { createMovement } from "./movement.js";
-import { drawTown } from "./town.js";
+import { drawTown } from "./town.js?v=20261009";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
  * Main application entry point

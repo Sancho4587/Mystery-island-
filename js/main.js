@@ -1,1 +1,253 @@
 
+/*
+ * MYSTERY ISLAND: THE LOST KEYS
+ * Main application entry point
+ * Version 0.2
+ */
+
+const GAME_VERSION = "0.2.0";
+
+const canvas = document.getElementById("game-canvas");
+const context = canvas.getContext("2d");
+
+const panels = {
+  backpack: document.getElementById("backpack-panel"),
+  map: document.getElementById("map-panel"),
+  menu: document.getElementById("menu-panel")
+};
+
+const messageBox = document.getElementById("game-message");
+
+const game = {
+  version: GAME_VERSION,
+  running: true,
+  location: "town",
+
+  player: {
+    x: 220,
+    y: 180,
+    stamina: 100,
+    maxStamina: 100
+  },
+
+  inventory: [
+    { id: "water", name: "Вода", icon: "💧", quantity: 5, unit: "л" },
+    { id: "food", name: "Еда", icon: "🥪", quantity: 8, unit: "порц." },
+    { id: "map", name: "Карта", icon: "🗺️", quantity: 1, unit: "шт." },
+    { id: "compass", name: "Компас", icon: "🧭", quantity: 1, unit: "шт." }
+  ]
+};
+
+function resizeCanvas() {
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+function showMessage(text) {
+  messageBox.textContent = text;
+}
+
+function closePanels() {
+  Object.values(panels).forEach(panel => {
+    panel.classList.add("hidden");
+  });
+
+  game.running = true;
+}
+
+function openPanel(name) {
+  closePanels();
+
+  if (!panels[name]) return;
+
+  panels[name].classList.remove("hidden");
+  game.running = false;
+
+  if (name === "backpack") {
+    renderInventory();
+  }
+
+  if (name === "map") {
+    renderMap();
+  }
+}
+
+function renderInventory() {
+  const container = document.getElementById("inventory-container");
+  container.replaceChildren();
+
+  game.inventory.forEach(item => {
+    const slot = document.createElement("div");
+    slot.className = "inventory-slot";
+
+    const icon = document.createElement("span");
+    icon.className = "item-icon";
+    icon.textContent = item.icon;
+
+    const name = document.createElement("span");
+    name.className = "item-name";
+    name.textContent = item.name;
+
+    const amount = document.createElement("span");
+    amount.textContent = `${item.quantity} ${item.unit}`;
+
+    slot.append(icon, name, amount);
+    container.appendChild(slot);
+  });
+}
+
+function renderMap() {
+  const container = document.getElementById("world-map-container");
+
+  container.textContent =
+    "🗺️ Родной город — первая доступная локация. " +
+    "Остальные территории откроются по мере исследования.";
+}
+
+function drawTemporaryWorld() {
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  context.clearRect(0, 0, width, height);
+
+  context.fillStyle = "#91bb80";
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "#d9c49a";
+  context.beginPath();
+  context.moveTo(0, height * 0.62);
+  context.bezierCurveTo(
+    width * 0.3, height * 0.48,
+    width * 0.55, height * 0.72,
+    width, height * 0.5
+  );
+  context.lineTo(width, height * 0.65);
+  context.bezierCurveTo(
+    width * 0.5, height * 0.85,
+    width * 0.25, height * 0.62,
+    0, height * 0.75
+  );
+  context.closePath();
+  context.fill();
+
+  // Temporary heroine marker.
+  context.fillStyle = "#355f9b";
+  context.beginPath();
+  context.arc(game.player.x, game.player.y, 13, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#ffffff";
+  context.font = "14px sans-serif";
+  context.fillText("Родной город", 20, height * 0.35);
+}
+
+function gameLoop() {
+  if (game.running) {
+    drawTemporaryWorld();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function saveGame() {
+  try {
+    localStorage.setItem(
+      "mystery-island-save",
+      JSON.stringify({
+        schemaVersion: 1,
+        version: game.version,
+        location: game.location,
+        player: game.player,
+        inventory: game.inventory
+      })
+    );
+
+    showMessage("Игра сохранена.");
+  } catch (error) {
+    showMessage("Не удалось сохранить игру.");
+    console.error(error);
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem("mystery-island-save");
+    if (!raw) return;
+
+    const data = JSON.parse(raw);
+    if (data.schemaVersion !== 1) return;
+
+    if (data.location === "town") {
+      game.location = data.location;
+    }
+
+    if (
+      data.player &&
+      Number.isFinite(data.player.x) &&
+      Number.isFinite(data.player.y)
+    ) {
+      game.player = {
+        ...game.player,
+        ...data.player
+      };
+    }
+
+    if (Array.isArray(data.inventory)) {
+      game.inventory = data.inventory;
+    }
+  } catch (error) {
+    console.error("Save loading failed:", error);
+  }
+}
+
+document.getElementById("btn-backpack").addEventListener(
+  "click", () => openPanel("backpack")
+);
+
+document.getElementById("btn-map").addEventListener(
+  "click", () => openPanel("map")
+);
+
+document.getElementById("btn-menu").addEventListener(
+  "click", () => openPanel("menu")
+);
+
+document.getElementById("close-backpack").addEventListener(
+  "click", closePanels
+);
+
+document.getElementById("close-map").addEventListener(
+  "click", closePanels
+);
+
+document.getElementById("close-menu").addEventListener(
+  "click", closePanels
+);
+
+document.getElementById("btn-save").addEventListener(
+  "click", saveGame
+);
+
+document.getElementById("btn-save-exit").addEventListener(
+  "click", () => {
+    saveGame();
+    closePanels();
+    game.running = false;
+    showMessage("Прогресс сохранён. Можно закрыть игру.");
+  }
+);
+
+window.addEventListener("resize", resizeCanvas);
+
+resizeCanvas();
+loadGame();
+gameLoop();
+
+showMessage("Добро пожаловать в Mystery Island!");
+

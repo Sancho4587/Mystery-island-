@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#163b35">
+<title>Mystery Island: The Lost Keys</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#102922;color:#fff;font-family:system-ui,-apple-system,sans-serif}
+header{padding:12px;text-align:center;background:#183f34}
+h1{font-size:19px;margin:0}
+small{color:#b9d8c8}
+main{max-width:800px;margin:auto;padding:10px}
+#stats{display:flex;justify-content:space-around;gap:6px;flex-wrap:wrap;margin:8px 0;font-size:13px}
+#game{display:block;width:100%;aspect-ratio:16/10;background:#80b879;border:3px solid #d5b36b;border-radius:12px;touch-action:none}
+#message{min-height:54px;background:#204b3d;border-radius:10px;padding:12px;margin-top:9px;font-size:14px}
+button{background:#e6bd62;color:#20251c;border:0;border-radius:10px;padding:12px;font-weight:700;font-size:14px;touch-action:manipulation}
+button:active{background:#fff0b0}
+.controls{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:12px}
+.dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,45px);gap:4px}
+.dpad button{padding:0;font-size:23px}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(85px,1fr));gap:7px;flex:1;max-width:350px}
+#panel{margin-top:12px;background:#193d33;border-radius:12px;padding:12px}
+#panel button{margin:4px}
+#panel[hidden]{display:none}
+footer{text-align:center;padding:12px;color:#aac4b5;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>🏝️ Mystery Island: The Lost Keys</h1>
+<small>Приключение начинается дома</small>
+</header>
+<main>
+<div id="stats"></div>
+<canvas id="game" width="800" height="500"></canvas>
+<div id="message" aria-live="polite">Добро пожаловать! Исследуй город и найди первые подсказки.</div>
+<div class="controls">
+<div class="dpad">
+<div></div><button data-dir="up">▲</button><div></div>
+<button data-dir="left">◀</button><div></div><button data-dir="right">▶</button>
+<div></div><button data-dir="down">▼</button><div></div>
+</div>
+<div class="actions">
+<button onclick="interact()">🔎 Исследовать</button>
+<button onclick="showAnimals()">🐕 Спутники</button>
+<button onclick="showJournal()">📖 Дневник</button>
+<button onclick="showMenu()">☰ Меню</button>
+</div>
+</div>
+<section id="panel" hidden></section>
+</main>
+<footer>Mystery Island • Prototype 0.1</footer>
+<script>
+"use strict";
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const panel=document.getElementById("panel");
+const message=document.getElementById("message");
+const SAVE_KEY="mystery-island-save-v1";
+
+const maps={
+ town:{
+  name:"Родной город",
+  ground:"#a9cf87",
+  objects:[
+   {x:100,y:95,type:"home",name:"Дом"},
+   {x:340,y:125,type:"person",name:"Библиотекарь"},
+   {x:580,y:105,type:"stable",name:"Конюшня"},
+   {x:180,y:350,type:"tree",name:"Старый дуб"},
+   {x:660,y:350,type:"exit",name:"Лесная тропа"}
+  ],
+  secrets:[
+   {id:"town1",x:180,y:350,name:"Тайник старого дуба",xp:20}
+  ]
+ },
+ forest:{
+  name:"Зелёный лес",
+  ground:"#78a76d",
+  objects:[
+   {x:95,y:250,type:"exit",name:"Дорога домой"},
+   {x:330,y:120,type:"tree",name:"Большая сосна"},
+   {x:610,y:150,type:"person",name:"Лесник"},
+   {x:530,y:370,type:"tree",name:"Заросли"}
+  ],
+  secrets:[
+   {id:"forest1",x:530,y:370,name:"Забытый лагерь",xp:30}
+  ]
+ }
+};
+
+const initial=()=>({
+ location:"town",x:260,y:270,
+ xp:0,charisma:1,strength:1,endurance:1,logic:1,
+ food:3,coins:10,
+ dog:false,horse:false,
+ dogMode:"follow",horseMode:"stay",
+ discovered:[],completed:[],
+ checkpoint:null
+});
+
+let state=initial();
+let keys={};
+let lastMove=0;
+let hintLevel=0;
+
+function say(text){message.textContent=text}
+function save(){
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify(state));
+  return true;
+ }catch(e){
+  say("Не удалось сохранить игру. Проверь свободное место и настройки Safari.");
+  return false;
+ }
+}
+function load(){
+ try{
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(!raw)return false;
+  const data=JSON.parse(raw);
+  if(!maps[data.location])return false;
+  state={...initial(),...data};
+  return true;
+ }catch(e){return false}
+}
+function checkpoint(){
+ state.checkpoint=JSON.parse(JSON.stringify({
+  ...state,checkpoint:null
+ }));
+ save();
+}
+function stats(){
+ document.getElementById("stats").innerHTML=
+ `<span>📍 ${maps[state.location].name}</span>
+ <span>⭐ XP ${state.xp}</span>
+ <span>💬 ${state.charisma}</span>
+ <span>💪 ${state.strength}</span>
+ <span>🧠 ${state.logic}</span>
+ <span>🎒 ${state.food}</span>`;
+}
+function drawObject(o){
+ ctx.save();
+ ctx.translate(o.x,o.y);
+ if(o.type==="home"){
+  ctx.fillStyle="#e7d6a8";ctx.fillRect(-40,-20,80,65);
+  ctx.fillStyle="#a95745";
+  ctx.beginPath();ctx.moveTo(-50,-20);ctx.lineTo(0,-65);ctx.lineTo(50,-20);ctx.fill();
+  ctx.fillStyle="#714e36";ctx.fillRect(-10,12,20,33);
+ }else if(o.type==="tree"){
+  ctx.fillStyle="#765438";ctx.fillRect(-9,0,18,48);
+  ctx.fillStyle="#2d7141";
+  ctx.beginPath();ctx.arc(0,-15,42,0,Math.PI*2);ctx.fill();
+ }else if(o.type==="person"){
+  ctx.fillStyle="#f1c4a0";
+  ctx.beginPath();ctx.arc(0,-20,13,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#5d5bb0";ctx.fillRect(-13,-5,26,38);
+ }else if(o.type==="stable"){
+  ctx.fillStyle="#a47b54";ctx.fillRect(-43,-25,86,65);
+  ctx.fillStyle="#674633";
+  ctx.beginPath();ctx.moveTo(-52,-25);ctx.lineTo(0,-58);ctx.lineTo(52,-25);ctx.fill();
+  ctx.fillStyle="#423126";ctx.fillRect(-16,3,32,37);
+ }else if(o.type==="exit"){
+  ctx.fillStyle="#e4cf78";
+  ctx.fillRect(-25,-35,50,8);
+  ctx.fillStyle="#72532e";
+  ctx.fillRect(-3,-27,6,65);
+  ctx.fillStyle="#315b35";
+  ctx.beginPath();ctx.moveTo(20,-31);ctx.lineTo(37,-15);ctx.lineTo(20,1);ctx.fill();
+ }
+ ctx.restore();
+ ctx.fillStyle="#173a2c";
+ ctx.font="bold 14px system-ui";
+ ctx.textAlign="center";
+ ctx.fillText(o.name,o.x,Math.min(490,o.y+62));
+}
+function draw(){
+ const map=maps[state.location];
+ ctx.fillStyle=map.ground;
+ ctx.fillRect(0,0,800,500);
+ // Дорожки и декоративная трава
+ ctx.fillStyle="#d3c294";
+ ctx.beginPath();
+ ctx.moveTo(0,270);ctx.bezierCurveTo(280,230,480,310,800,250);
+ ctx.lineTo(800,310);ctx.bezierCurveTo(480,365,280,290,0,330);
+ ctx.fill();
+ for(let i=0;i<45;i++){
+  const x=(i*137+39)%800,y=(i*83+51)%500;
+  ctx.fillStyle="#57985a";
+  ctx.fillRect(x,y,3,9);
+ }
+ map.objects.forEach(drawObject);
+ if(state.horse&&state.horseMode==="follow"){
+  ctx.font="35px serif";
+  ctx.fillText("🐎",state.x-53,state.y+4);
+ }
+ if(state.dog&&state.dogMode==="follow"){
+  ctx.font="29px serif";
+  ctx.fillText("🐕",state.x+39,state.y+13);
+ }
+ // Героиня
+ ctx.fillStyle="#293c66";
+ ctx.fillRect(state.x-12,state.y-2,24,30);
+ ctx.fillStyle="#f4c49f";
+ ctx.beginPath();ctx.arc(state.x,state.y-16,13,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#6d4229";
+ ctx.beginPath();ctx.arc(state.x,state.y-23,13,Math.PI,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#b16e38";
+ ctx.fillRect(state.x-19,state.y,9,22);
+ ctx.fillStyle="#fff";
+ ctx.font="bold 13px system-ui";
+ ctx.fillText("Ты",state.x,state.y-38);
+ stats();
+}
+function near(o){
+ return Math.hypot(state.x-o.x,state.y-o.y)<85;
+}
+function changeLocation(id,x,y){
+ state.location=id;state.x=x;state.y=y;
+ checkpoint();
+ say("Новая локация: "+maps[id].name+". Контрольная точка сохранена.");
+}
+function reward(secret){
+ if(state.discovered.includes(secret.id)){
+  say("Ты уже исследовала это тайное место.");
+  return;
+ }
+ state.discovered.push(secret.id);
+ state.xp+=secret.xp;
+ state.food+=1;
+ save();
+ say("🎉 Найдено: "+secret.name+"! +"+secret.xp+" XP и 1 порция провианта.");
+}
+function interact(){
+ closePanel();
+ const map=maps[state.location];
+ const o=map.objects.find(near);
+ if(!o){
+  say("Осмотрись вокруг. Подойди к человеку или интересному месту.");
+  return;
+ }
+ if(o.type==="exit"){
+  if(state.location==="town")changeLocation("forest",140,260);
+  else changeLocation("town",610,330);
+  return;
+ }
+ if(o.type==="stable"){
+  if(!state.horse){
+   showChoices("Хозяйка конюшни: «Хочешь подружиться с лошадью? Сначала познакомься с ней спокойно».",
+   [{label:"Познакомиться и помочь ухаживать",action:()=>{
+    state.horse=true;state.charisma++;save();
+    say("🐎 Лошадь стала твоим другом! Харизма +1.");
+   }}]);
+  }else say("Твоя лошадь рада тебя видеть.");
+  return;
+ }
+ if(o.name==="Библиотекарь"){
+  showChoices("Библиотекарь: «Старый дуб хранит секрет. Иногда нужно внимательно изучить место, а не просто пройти мимо».",
+  [{label:"Поблагодарить",action:()=>say("Ты получила подсказку о старом дубе.")}]);
+  return;
+ }
+ if(o.name==="Лесник"){
+  if(!state.dog){
+   showChoices("Лесник: «Мой пёс любит путешествовать. Поможешь мне научить его команде “Ко мне”?»",
+   [{label:"Спокойно позвать собаку",action:()=>{
+    state.dog=true;state.charisma++;save();
+    say("🐕 Пёс теперь путешествует с тобой! Харизма +1.");
+   }}]);
+  }else showPuzzle();
+  return;
+ }
+ if(o.type==="tree"){
+  const secret=map.secrets.find(s=>Math.hypot(s.x-o.x,s.y-o.y)<15);
+  if(secret){
+   if(state.location==="forest"&&!state.dog){
+    say("Ты заметила необычные следы. Возможно, здесь что-то скрыто. Исследуй местность внимательнее.");
+    showPuzzle();
+   }else reward(secret);
+  }else say("Дерево выглядит старым. Внимательно изучай окружающую природу.");
+  return;
+ }
+ if(o.type==="home"){
+  showChoices("Ты дома. Мама Вика и папа Саша ждут твоих историй.",
+   [{label:"Рассказать о приключениях",action:()=>{
+    say("Мама Вика: «Что нового ты узнала сегодня?» Папа Саша: «А что было самым сложным?»");
+   }},
+   {label:"Сохранить и отдохнуть",action:()=>saveAndExit()}]);
+ }
+}
+function showPuzzle(){
+ hintLevel=0;
+ puzzlePanel();
+}
+function puzzlePanel(){
+ const solved=state.completed.includes("forest-puzzle");
+ if(solved){say("Ты уже разобралась с этим испытанием.");return}
+ panel.hidden=false;
+ panel.innerHTML=`<h3>🧠 Загадка лесной тропы</h3>
+ <p>Ты шла на север, затем повернула направо. В каком направлении ты идёшь теперь?</p>
+ <button onclick="answerPuzzle('west')">На запад</button>
+ <button onclick="answerPuzzle('east')">На восток</button>
+ <button onclick="answerPuzzle('south')">На юг</button>
+ <button onclick="puzzleHint()">💡 Подсказка</button>
+ <button onclick="closePanel()">Закрыть</button>`;
+}
+function puzzleHint(){
+ hintLevel++;
+ say(hintLevel===1?
+ "Представь компас. Где находится восток относительно севера?":
+ "Если стоишь лицом на север, твоя правая рука указывает на восток.");
+}
+function answerPuzzle(a){
+ if(a==="east"){
+  state.completed.push("forest-puzzle");
+  state.logic++;state.xp+=25;
+  save();closePanel();
+  say("Верно! Поворот направо от севера ведёт на восток. +25 XP, логика +1.");
+ }else{
+  say("Попробуй разобраться: представь, что стоишь лицом на север. Где будет твоя правая рука?");
+ }
+}
+function showChoices(text,options){
+ panel.hidden=false;
+ panel.innerHTML="";
+ const p=document.createElement("p");p.textContent=text;panel.appendChild(p);
+ options.forEach(opt=>{
+  const b=document.createElement("button");
+  b.textContent=opt.label;
+  b.onclick=()=>{closePanel();opt.action()};
+  panel.appendChild(b);
+ });
+ const b=document.createElement("button");
+ b.textContent="Закрыть";b.onclick=closePanel;panel.appendChild(b);
+}
+function closePanel(){panel.hidden=true;panel.innerHTML=""}
+function showAnimals(){
+ const options=[];
+ if(state.dog){
+  ["follow","stay","search","free"].forEach(v=>options.push({
+   label:"🐕 "+({follow:"За мной",stay:"Ждать",search:"Ищи",free:"Гуляй"}[v]),
+   action:()=>{
+    state.dogMode=v;save();
+    if(v==="search"){
+     const s=maps[state.location].secrets.find(s=>!state.discovered.includes(s.id));
+     say(s?"Пёс принюхивается. Кажется, что-то интересное находится возле "+s.name.toLowerCase()+".":"Пёс исследует местность, но пока ничего необычного не заметил.");
+    }else say("Собака: команда принята.");
+   }
+  }));
+ }
+ if(state.horse){
+  ["follow","stay"].forEach(v=>options.push({
+   label:"🐎 "+(v==="follow"?"За мной":"Ждать"),
+   action:()=>{state.horseMode=v;save();say("Лошадь: команда принята.")}
+  }));
+ }
+ if(!options.length){say("Пока у тебя нет животных. Исследуй конюшню и поговори с лесником.");return}
+ showChoices("Команды спутникам",options);
+}
+function showJournal(){
+ showChoices(
+ "📖 Дневник путешественницы\n"+
+ "Локации: "+Object.keys(maps).length+" (прототип)\n"+
+ "Тайники: "+state.discovered.length+"/2\n"+
+ "Завершённые испытания: "+state.completed.length+"\n"+
+ "Опыт: "+state.xp,
+ [{label:"Продолжить путешествие",action:()=>say("Исследуй мир и обращай внимание на подсказки.")}]
+ );
+}
+function saveAndExit(){
+ if(save()){
+  closePanel();
+  showChoices("💾 Путешествие сохранено. В следующий раз ты продолжишь с этого же места.",
+  [{label:"Продолжить сейчас",action:()=>say("Приключение продолжается!") }]);
+ }
+}
+function restartLocation(){
+ const old=state;
+ state={
+  ...old,
+  x:old.location==="town"?260:140,
+  y:old.location==="town"?270:260
+ };
+ checkpoint();
+ closePanel();
+ say("Ты вернулась к началу текущей локации. Общий прогресс сохранён.");
+}
+function restoreCheckpoint(){
+ if(!state.checkpoint){say("Контрольная точка пока отсутствует.");return}
+ state={...initial(),...JSON.parse(JSON.stringify(state.checkpoint))};
+ checkpoint();closePanel();
+ say("Загружена последняя контрольная точка.");
+}
+function showMenu(){
+ showChoices("☰ Меню приключения",[
+  {label:"💾 Сохранить и выйти",action:saveAndExit},
+  {label:"🚩 Последняя контрольная точка",action:()=>{
+   if(confirm("Вернуться к контрольной точке? Изменения после неё будут отменены."))restoreCheckpoint();
+  }},
+  {label:"🔄 Начало текущей локации",action:()=>{
+   if(confirm("Вернуться к началу локации?"))restartLocation();
+  }}
+ ]);
+}
+function move(dx,dy){
+ state.x=Math.max(25,Math.min(775,state.x+dx));
+ state.y=Math.max(65,Math.min(435,state.y+dy));
+}
+function tick(t){
+ if(t-lastMove>35){
+  let dx=0,dy=0;
+  if(keys.left)dx-=5;
+  if(keys.right)dx+=5;
+  if(keys.up)dy-=5;
+  if(keys.down)dy+=5;
+  if(dx||dy){
+   move(dx,dy);lastMove=t;
+  }
+ }
+ draw();
+ requestAnimationFrame(tick);
+}
+document.querySelectorAll("[data-dir]").forEach(b=>{
+ const dir=b.dataset.dir;
+ b.addEventListener("pointerdown",e=>{
+  e.preventDefault();keys[dir]=true;
+  try{b.setPointerCapture(e.pointerId)}catch(_){}
+ });
+ ["pointerup","pointercancel","lostpointercapture"].forEach(type=>
+  b.addEventListener(type,()=>keys[dir]=false));
+});
+window.addEventListener("keydown",e=>{
+ const dirs={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"};
+ if(dirs[e.key]){keys[dirs[e.key]]=true;e.preventDefault()}
+ if(e.key===" "){interact();e.preventDefault()}
+});
+window.addEventListener("keyup",e=>{
+ const dirs={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"};
+ if(dirs[e.key])keys[dirs[e.key]]=false;
+});
+window.addEventListener("blur",()=>{keys={};save()});
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden){keys={};save()}
+});
+window.addEventListener("pagehide",save);
+
+if(load())say("С возвращением! Ты продолжаешь путешествие с сохранённого места.");
+else{checkpoint();say("Приключение начинается! Исследуй город и поговори с его жителями.");}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

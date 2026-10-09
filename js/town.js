@@ -14,7 +14,6 @@ export function drawTown(context, canvas, game) {
   drawVillageSquare(context, width, height, time);
 
   drawHouse(context, width * 0.20, height * 0.34, 1.05, {
-    label: "Дом",
     roof: "#9d4d36",
     wall: "#f4ead7",
     timber: "#8a5b3e",
@@ -22,7 +21,6 @@ export function drawTown(context, canvas, game) {
   });
 
   drawHouse(context, width * 0.64, height * 0.28, 0.92, {
-    label: "Лавка",
     roof: "#8f4a2b",
     wall: "#f5e6cf",
     timber: "#7a5139",
@@ -55,7 +53,6 @@ export function drawTown(context, canvas, game) {
   drawBench(context, width * 0.28, height * 0.77, 0.9);
   drawBench(context, width * 0.52, height * 0.79, 0.9);
 
-  drawLocationBanner(context, width, height);
   drawPlayer(context, game.player, time);
 }
 
@@ -310,8 +307,6 @@ function drawStable(ctx, x, y, scale, time) {
 
   const horseShift = Math.sin(time * 2.1) * 1.2;
   drawHorseSilhouette(ctx, x + 26 * scale, y + 6 * scale + horseShift, 0.32 * scale);
-
-  drawTinyLabel(ctx, x, y - h * 1.15, "Конюшня");
 
   ctx.restore();
 }

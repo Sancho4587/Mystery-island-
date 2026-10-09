@@ -224,5 +224,5 @@ resizeCanvas();
 loadGame();
 requestAnimationFrame(gameLoop);
 
-showMessage("Добро пожаловать в Mystery Island!");
+showMessage("");
 

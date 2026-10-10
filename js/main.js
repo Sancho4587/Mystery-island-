@@ -168,6 +168,7 @@ homeButton.addEventListener("click", () => {
     y: game.player.y
   };
 
+  movement.cancel();
   game.location = "homeInterior";
   game.player.x = canvas.clientWidth * 0.49;
   game.player.y = canvas.clientHeight * 0.82;
@@ -212,6 +213,7 @@ function exitFamilyHome() {
   }
 
   homeExitInProgress = true;
+  movement.cancel();
 
   transitionScreen.style.visibility = "visible";
   transitionScreen.style.opacity = "1";
@@ -376,6 +378,7 @@ document.getElementById("btn-save").addEventListener(
 document.getElementById("btn-save-exit").addEventListener(
   "click", () => {
     saveGame();
+    movement.cancel();
     closePanels();
     game.running = false;
     showMessage("Прогресс сохранён. Можно закрыть игру.");

@@ -165,7 +165,7 @@ const h = canvas.clientHeight;
       x < PLAYER_RADIUS ||
       x > width - PLAYER_RADIUS ||
       y < 95 ||
-      y > height - 100
+      y > height - (game.location === "homeInterior" ? PLAYER_RADIUS : 100)
     ) {
       return true;
     }

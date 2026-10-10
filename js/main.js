@@ -23,7 +23,7 @@ const game = {
   version: GAME_VERSION,
   running: true,
   location: "town",
-
+  returnPosition: null,
   player: {
     x: 220,
     y: 180,

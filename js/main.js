@@ -202,7 +202,62 @@ document.getElementById("game-screen")
 
 const movement = createMovement(canvas, context, game);
 
+// Automatic exit transition
+  
+let homeExitInProgress = false;
+
+function exitFamilyHome() {
+  if (homeExitInProgress || game.location !== "homeInterior") {
+    return;
+  }
+
+  homeExitInProgress = true;
+
+  transitionScreen.style.visibility = "visible";
+  transitionScreen.style.opacity = "1";
+
+  setTimeout(() => {
+    game.location = "town";
+
+    const position = game.returnPosition;
+
+    if (position) {
+      game.player.x = position.x;
+      game.player.y = position.y;
+    }
+
+    saveGame();
+
+    transitionScreen.style.opacity = "0";
+
+    setTimeout(() => {
+      transitionScreen.style.visibility = "hidden";
+      showMessage("Игра сохранена");
+
+      setTimeout(() => {
+        showMessage("");
+      }, 2000);
+
+      homeExitInProgress = false;
+    }, 450);
+  }, 450);
+}
+function isAtHomeExit() {
+  if (game.location !== "homeInterior") {
+    return false;
+  }
+
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+
+  return (
+    Math.abs(game.player.x - w * 0.49) <= 34 &&
+    game.player.y >= h * 0.90
+  );
+}
+
 function gameLoop(timestamp) {
+    movement.update(timestamp);
   if (game.location === "town") {
   homeButton.textContent = "🚪 Войти";
   homeButton.classList.toggle("hidden", !isNearHomeDoor());
@@ -210,8 +265,14 @@ function gameLoop(timestamp) {
   homeButton.textContent = "🚪 Выйти";
   homeButton.classList.toggle("hidden", true);
 }
-  movement.update(timestamp);
 
+if (
+  game.running &&
+  isAtHomeExit() &&
+  !homeExitInProgress
+) {
+  exitFamilyHome();
+}
 if (game.running) {
   drawTemporaryWorld();
   movement.draw(timestamp);

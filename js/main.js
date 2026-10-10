@@ -1,5 +1,6 @@
 import { createMovement } from "./movement.js?v=20261009";
 import { drawTown } from "./town.js?v=20261009";
+import { drawHome } from "./home.js?v=20261009";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
  * Main application entry point
@@ -113,19 +114,108 @@ function renderMap() {
 
 
 function drawTemporaryWorld() {
-  drawTown(context, canvas, game);
+  if (game.location === "homeInterior") {
+    drawHome(context, canvas, game);
+  } else {
+    drawTown(context, canvas, game);
+  }
 }
 
+
+
+function isNearHomeDoor() {
+  if (game.location !== "town") {
+    return false;
+  }
+
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+
+  const doorX = w * 0.20;
+  const doorY = h * 0.34 + 48;
+
+  const distance = Math.hypot(
+    game.player.x - doorX,
+    game.player.y - doorY
+  );
+
+  return distance <= 42;
+}
+
+
+const homeButton = document.createElement("button");
+homeButton.type = "button";
+homeButton.className = "game-button hidden";
+homeButton.textContent = "🚪 Войти";
+
+Object.assign(homeButton.style, {
+  position: "absolute",
+  left: "50%",
+  bottom: "115px",
+  transform: "translateX(-50%)",
+  zIndex: "8",
+  whiteSpace: "nowrap"
+});
+
+document.getElementById("game-screen").appendChild(homeButton);
+homeButton.addEventListener("click", () => {
+  if (game.location !== "town" || !isNearHomeDoor()) {
+    return;
+  }
+
+  game.returnPosition = {
+    x: game.player.x,
+    y: game.player.y
+  };
+
+  game.location = "homeInterior";
+  game.player.x = canvas.clientWidth * 0.49;
+  game.player.y = canvas.clientHeight * 0.82;
+
+  homeButton.classList.add("hidden");
+});
+
+const transitionScreen = document.createElement("div");
+
+transitionScreen.textContent = "⌛ Загрузка...";
+Object.assign(transitionScreen.style, {
+  position: "absolute",
+  inset: "0",
+  background: "rgba(8, 20, 17, 0.96)",
+  color: "#ffffff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "18px",
+  fontWeight: "bold",
+  zIndex: "30",
+  opacity: "0",
+  visibility: "hidden",
+  pointerEvents: "none",
+  transition: "opacity 0.4s ease"
+});
+
+document.getElementById("game-screen")
+  .appendChild(transitionScreen);
+
+  
 
 const movement = createMovement(canvas, context, game);
 
 function gameLoop(timestamp) {
+  if (game.location === "town") {
+  homeButton.textContent = "🚪 Войти";
+  homeButton.classList.toggle("hidden", !isNearHomeDoor());
+} else {
+  homeButton.textContent = "🚪 Выйти";
+  homeButton.classList.toggle("hidden", true);
+}
   movement.update(timestamp);
 
-  if (game.running) {
-    drawTemporaryWorld();
-    movement.draw(timestamp);
-  }
+if (game.running) {
+  drawTemporaryWorld();
+  movement.draw(timestamp);
+}
 
   requestAnimationFrame(gameLoop);
 }
@@ -138,6 +228,7 @@ function saveGame() {
         schemaVersion: 1,
         version: game.version,
         location: game.location,
+        returnPosition: game.returnPosition,
         player: game.player,
         inventory: game.inventory
       })
@@ -158,10 +249,22 @@ function loadGame() {
     const data = JSON.parse(raw);
     if (data.schemaVersion !== 1) return;
 
-    if (data.location === "town") {
-      game.location = data.location;
-    }
-
+    if (
+  data.location === "town" ||
+  data.location === "homeInterior"
+) {
+  game.location = data.location;
+}
+if (
+  data.returnPosition &&
+  Number.isFinite(data.returnPosition.x) &&
+  Number.isFinite(data.returnPosition.y)
+) {
+  game.returnPosition = {
+    x: data.returnPosition.x,
+    y: data.returnPosition.y
+  };
+}
     if (
       data.player &&
       Number.isFinite(data.player.x) &&

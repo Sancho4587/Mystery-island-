@@ -203,6 +203,39 @@ document.getElementById("game-screen")
 
 const movement = createMovement(canvas, context, game);
 
+// Reusable in-game dialogue overlay. It pauses movement while the player reads.
+const dialogueOverlay = document.createElement("div");
+dialogueOverlay.className = "story-overlay hidden";
+dialogueOverlay.setAttribute("role", "dialog");
+dialogueOverlay.setAttribute("aria-modal", "true");
+dialogueOverlay.setAttribute("aria-labelledby", "story-title");
+dialogueOverlay.innerHTML = `
+  <div class="story-card">
+    <div class="story-symbol" aria-hidden="true">📜</div>
+    <h2 id="story-title">Старая записка</h2>
+    <p id="story-text"></p>
+    <button class="game-button story-close" type="button">Понятно</button>
+  </div>`;
+document.getElementById("game-screen").appendChild(dialogueOverlay);
+const storyText = dialogueOverlay.querySelector("#story-text");
+const storyClose = dialogueOverlay.querySelector(".story-close");
+let storyPreviousFocus = null;
+function closeStoryDialogue() {
+  dialogueOverlay.classList.add("hidden");
+  game.running = true;
+  if (storyPreviousFocus && storyPreviousFocus.isConnected) storyPreviousFocus.focus();
+}
+storyClose.addEventListener("click", closeStoryDialogue);
+function openStoryDialogue(text) {
+  movement.cancel();
+  storyPreviousFocus = document.activeElement;
+  storyText.textContent = text;
+  showMessage("");
+  game.running = false;
+  dialogueOverlay.classList.remove("hidden");
+  storyClose.focus();
+}
+
 // The first adventure clue: inspect the chest from nearby.
 const chestButton = document.createElement("button");
 chestButton.type = "button";
@@ -239,10 +272,10 @@ chestButton.addEventListener("click", () => {
       quantity: 1,
       unit: "шт."
     });
-    showMessage("📜 В сундуке записка: «Первый ключ спрятан там, где слышна вода». Загляни в рюкзак!");
     saveGame({ silent: true });
+    openStoryDialogue("Первый ключ спрятан там, где слышна вода. Записка добавлена в рюкзак!");
   } else {
-    showMessage("📜 Записка: «Первый ключ спрятан там, где слышна вода».");
+    openStoryDialogue("Первый ключ спрятан там, где слышна вода. Записка уже лежит в рюкзаке.");
   }
 });
 

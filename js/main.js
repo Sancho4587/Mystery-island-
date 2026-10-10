@@ -203,6 +203,50 @@ document.getElementById("game-screen")
 
 const movement = createMovement(canvas, context, game);
 
+// The first adventure clue: inspect the chest from nearby.
+const chestButton = document.createElement("button");
+chestButton.type = "button";
+chestButton.className = "game-button hidden";
+chestButton.textContent = "🔍 Осмотреть сундук";
+Object.assign(chestButton.style, {
+  position: "absolute",
+  left: "50%",
+  bottom: "115px",
+  transform: "translateX(-50%)",
+  zIndex: "8",
+  whiteSpace: "nowrap"
+});
+document.getElementById("game-screen").appendChild(chestButton);
+
+function isNearChest() {
+  if (game.location !== "homeInterior") return false;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const chestX = w * 0.76;
+  const chestY = h * 0.75;
+  return Math.hypot(game.player.x - chestX, game.player.y - chestY) <= 85;
+}
+
+chestButton.addEventListener("click", () => {
+  if (!game.running || !isNearChest()) return;
+  movement.cancel();
+  const hasClue = game.inventory.some(item => item.id === "old-note");
+  if (!hasClue) {
+    game.inventory.push({
+      id: "old-note",
+      name: "Старая записка",
+      icon: "📜",
+      quantity: 1,
+      unit: "шт."
+    });
+    showMessage("📜 В сундуке записка: «Первый ключ спрятан там, где слышна вода». Загляни в рюкзак!");
+    saveGame({ silent: true });
+  } else {
+    showMessage("📜 Записка: «Первый ключ спрятан там, где слышна вода».");
+  }
+});
+
+
 // Automatic exit transition
   
 let homeExitInProgress = false;
@@ -213,6 +257,7 @@ function exitFamilyHome() {
   }
 
   homeExitInProgress = true;
+  chestButton.classList.add("hidden");
   movement.cancel();
 
   transitionScreen.style.visibility = "visible";
@@ -260,6 +305,7 @@ function isAtHomeExit() {
 
 function gameLoop(timestamp) {
     movement.update(timestamp);
+  chestButton.classList.toggle("hidden", !game.running || !isNearChest());
   if (game.location === "town") {
   homeButton.textContent = "🚪 Войти";
   homeButton.classList.toggle("hidden", !isNearHomeDoor());
@@ -283,7 +329,7 @@ if (game.running) {
   requestAnimationFrame(gameLoop);
 }
 
-function saveGame() {
+function saveGame({ silent = false } = {}) {
   try {
     localStorage.setItem(
       "mystery-island-save",
@@ -297,7 +343,7 @@ function saveGame() {
       })
     );
 
-    showMessage("Игра сохранена.");
+    if (!silent) showMessage("Игра сохранена.");
   } catch (error) {
     showMessage("Не удалось сохранить игру.");
     console.error(error);

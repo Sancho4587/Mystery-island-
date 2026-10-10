@@ -12,33 +12,99 @@ export function createCollision(canvas) {
 
   // Temporary obstacles for testing.
   // Later these will come from each location's map.
-  const obstacles = [
-    {
-      id: "house",
-      type: "rectangle",
-      x: 75,
-      y: 110,
-      width: 100,
-      height: 85,
-      label: "Дом"
-    },
-    {
-      id: "tree",
-      type: "circle",
-      x: 320,
-      y: 210,
-      radius: 28,
-      label: "Дерево"
-    },
-    {
-      id: "rock",
-      type: "circle",
-      x: 130,
-      y: 340,
-      radius: 24,
-      label: "Камень"
-    }
-  ];
+  
+  function getObstacles() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+
+    return [
+      {
+        id: "home",
+        type: "rectangle",
+        x: w * 0.20 - 44,
+        y: h * 0.34 - 31,
+        width: 88,
+        height: 61,
+        label: "Дом"
+      },
+      {
+        id: "shop",
+        type: "rectangle",
+        x: w * 0.64 - 39,
+        y: h * 0.28 - 27,
+        width: 78,
+        height: 54,
+        label: "Лавка"
+      },
+      {
+        id: "stable",
+        type: "rectangle",
+        x: w * 0.77 - 44,
+        y: h * 0.56 - 23,
+        width: 88,
+        height: 46,
+        label: "Конюшня"
+      },
+      {
+        id: "tree-center",
+        type: "circle",
+        x: w * 0.52,
+        y: h * 0.45 + 30,
+        radius: 15,
+        label: "Дерево"
+      },
+      {
+        id: "tree-right",
+        type: "circle",
+        x: w * 0.83,
+        y: h * 0.36 + 25,
+        radius: 12,
+        label: "Дерево"
+      },
+      {
+        id: "tree-left",
+        type: "circle",
+        x: w * 0.10,
+        y: h * 0.48 + 22,
+        radius: 12,
+        label: "Дерево"
+      },
+      {
+        id: "pine-right",
+        type: "circle",
+        x: w * 0.90,
+        y: h * 0.48 + 22,
+        radius: 11,
+        label: "Ель"
+      },
+      {
+        id: "pine-left",
+        type: "circle",
+        x: w * 0.07,
+        y: h * 0.62 + 20,
+        radius: 10,
+        label: "Ель"
+      },
+      {
+        id: "rock-left",
+        type: "circle",
+        x: w * 0.19,
+        y: h * 0.63,
+        radius: 18,
+        label: "Камень"
+      },
+      {
+        id: "rock-right",
+        type: "circle",
+        x: w * 0.71,
+        y: h * 0.47,
+        radius: 11,
+        label: "Камень"
+      }
+
+    ];
+  }
+
 
   function isBlocked(x, y) {
     if (
@@ -61,7 +127,7 @@ export function createCollision(canvas) {
       return true;
     }
 
-    for (const obstacle of obstacles) {
+    for (const obstacle of getObstacles()) {
       if (obstacle.type === "circle") {
         const distance = Math.hypot(
           x - obstacle.x,
@@ -131,7 +197,7 @@ export function createCollision(canvas) {
   function draw(context) {
     context.save();
 
-    for (const obstacle of obstacles) {
+    for (const obstacle of getObstacles()) {
       context.beginPath();
 
       if (obstacle.type === "circle") {

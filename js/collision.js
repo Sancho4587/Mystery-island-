@@ -7,16 +7,59 @@
  * Coordinates use the game's canvas space.
  */
 
-export function createCollision(canvas) {
+export function createCollision(canvas, game) {
   const PLAYER_RADIUS = 13;
 
   // Temporary obstacles for testing.
   // Later these will come from each location's map.
   
   function getObstacles() {
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    
+const w = canvas.clientWidth;
+const h = canvas.clientHeight;
 
+    if (game.location === "homeInterior") {
+      return [
+        {
+          id: "home-bed",
+          type: "rectangle",
+          x: w * 0.16,
+          y: h * 0.55,
+          width: w * 0.23,
+          height: h * 0.14,
+          label: "Кровать"
+        },
+        {
+          id: "home-table",
+          type: "rectangle",
+          x: w * 0.37,
+          y: h * 0.60,
+          width: w * 0.24,
+          height: h * 0.10,
+          label: "Стол"
+        },
+        {
+          id: "home-bookshelf",
+          type: "rectangle",
+          x: w * 0.75,
+          y: h * 0.41,
+          width: w * 0.16,
+          height: h * 0.16,
+          label: "Книжный шкаф"
+        },
+        {
+          id: "home-chest",
+          type: "rectangle",
+          x: w * 0.685,
+          y: h * 0.71,
+          width: w * 0.15,
+          height: h * 0.08,
+          label: "Сундук"
+        }
+      ];
+    }
+
+    
     return [
       {
         id: "home",

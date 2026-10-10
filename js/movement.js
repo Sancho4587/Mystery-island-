@@ -6,7 +6,7 @@ import { createCollision } from "./collision.js?v=20261009";
  */
 
 export function createMovement(canvas, context, game) { 
-const collision = createCollision(canvas);
+const collision = createCollision(canvas, game);
   const state = {
     drawing: false,
     moving: false,

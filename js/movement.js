@@ -85,6 +85,7 @@ const collision = createCollision(canvas, game);
     const segmentLength = distance(previous, point);
 
     if (segmentLength < MIN_POINT_DISTANCE) return;
+    if (!collision.canMove(previous.x, previous.y, point.x, point.y)) return;
 
     if (state.distance + segmentLength > MAX_ROUTE) {
       const remaining = MAX_ROUTE - state.distance;
@@ -111,6 +112,7 @@ const collision = createCollision(canvas, game);
       return;
     }
 
+    continueDrawing(event);
     event.preventDefault();
 
     state.drawing = false;

@@ -1,4 +1,4 @@
-import { createCollision } from "./collision.js";
+import { createCollision } from "./collision.js?v=20261009";
 /*
  * MYSTERY ISLAND
  * Finger-drawn movement system

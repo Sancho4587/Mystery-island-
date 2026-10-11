@@ -562,3 +562,11 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 .time-card .game-button {display:block;width:100%;margin-top:12px;white-space:normal;}
 .time-card label {display:block;margin:14px 0;}
 .time-card input {display:block;width:100%;min-height:48px;margin:8px 0;padding:10px;font:inherit;border:1px solid #948566;border-radius:10px;background:white;color:#24352e;}
+
+/* A quiet illustrated bedtime; controls never overlap the picture. */
+.sleep-screen {background:rgba(15,22,43,.96);}
+.sleep-screen .time-card {width:min(94vw,800px);padding:clamp(16px,3vw,28px);background:#242d47;color:#f7ead3;border-color:#64718c;text-align:center;}
+.sleep-screen .time-card h2 {font-family:Georgia,serif;font-size:clamp(24px,4vw,34px);margin:0 0 16px;}
+.sleep-illustration {display:block;width:100%;height:auto;max-height:52dvh;object-fit:contain;border-radius:16px;}
+.sleep-screen .time-card p {margin:18px 0;color:#e3dfd6;}
+.sleep-screen .game-button {max-width:340px;margin:16px auto 0;background:#3e5069;border-color:#8190a5;}

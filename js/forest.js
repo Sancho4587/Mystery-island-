@@ -1,5 +1,5 @@
-import { drawTree, drawRock, drawPlayer } from './town.js?v=20261010-forest';
-import { forestObstacles, forestExitPosition } from './world-layout.js?v=20261010-forest';
+import { drawTree, drawRock, drawPlayer } from './town.js?v=20261010-keeper';
+import { forestObstacles, forestExitPosition } from './world-layout.js?v=20261010-keeper';
 
 export function drawForest(ctx, canvas, game) {
   const w = canvas.clientWidth, h = canvas.clientHeight, t = performance.now() / 1000;

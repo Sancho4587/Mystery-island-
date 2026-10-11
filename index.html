@@ -14,7 +14,7 @@
 
   <title>Mystery Island: The Lost Keys</title>
 
-  <link rel="stylesheet" href="./style.css?v=20261010-journal">
+  <link rel="stylesheet" href="./style.css?v=20261010-rpg-bag">
 </head>
 
 <body>
@@ -101,7 +101,41 @@
 
       </div>
 
-      <div id="inventory-container"></div>
+      <div class="backpack-layout">
+        <section class="backpack-items" aria-labelledby="bag-items-title">
+          <h3 id="bag-items-title">Предметы</h3>
+          <div id="backpack-capacity" data-state="available" role="status">
+            <div class="capacity-line"><strong id="capacity-count"></strong><span id="capacity-status"></span></div>
+            <progress id="capacity-meter" max="12" value="0" aria-label="Заполненность рюкзака"></progress>
+          </div>
+          <p class="bag-stack-hint">Одинаковые предметы — одна ячейка</p>
+          <div id="inventory-container"></div>
+        </section>
+        <section class="character-equipment" aria-labelledby="equipment-title">
+          <h3 id="equipment-title">Экипировка</h3>
+          <div class="equipment-stage">
+            <svg class="equipment-avatar" viewBox="0 0 180 300" role="img" aria-label="Силуэт персонажа в текущей экипировке">
+              <ellipse cx="90" cy="284" rx="46" ry="9" fill="#193b32" opacity=".15"/>
+              <g fill="#b5bda9" stroke="#788775" stroke-width="2">
+                <circle cx="90" cy="42" r="23"/>
+                <path d="M78 64h24l6 13 20 9 24 78-15 6-24-57-3 68 9 87h-22l-7-71-7 71H61l9-87-3-68-24 57-15-6 24-78 20-9Z"/>
+              </g>
+              <g id="avatar-body" fill="#4d8770" stroke="#285440" stroke-width="2">
+                <path d="m73 74 17 9 17-9 21 12 12 39-18 7-10-23-2 71H70l-2-71-10 23-18-7 12-39Z"/>
+                <path d="M90 86v89" fill="none" stroke="#a9c99e"/>
+                <path d="m76 76 14 10 14-10" fill="none" stroke="#d7dfb4" stroke-width="3"/>
+              </g>
+              <path id="avatar-legs" d="M70 176h40l9 86H98l-8-64-8 64H61Z" fill="#677b86" stroke="#3c525d" stroke-width="2"/>
+              <g id="avatar-feet" fill="#765039" stroke="#4d3327" stroke-width="2">
+                <path d="M62 251h20l-2 28H51v-10l10-6Z"/><path d="M98 251h20l1 12 10 6v10h-29Z"/>
+              </g>
+            </svg>
+            <div id="equipment-slots"></div>
+          </div>
+          <p id="equipment-summary"></p>
+        </section>
+      </div>
+      <section id="inventory-details" aria-label="Описание предмета" aria-live="polite"></section>
 
     </section>
 
@@ -172,7 +206,7 @@
   </div>
 
   <!-- GAME MODULES -->
-  <script type="module" src="./js/main.js?v=20261010-journal"></script>
+  <script type="module" src="./js/main.js?v=20261010-rpg-bag"></script>
 
 </body>
 </html>

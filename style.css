@@ -426,3 +426,10 @@ button {
   margin: 0; font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(20px, 3vw, 24px); line-height: 1.6;
 }
+
+/* Readable inventory entries use the existing slot layout. */
+button.inventory-slot { color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
+button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.story-overlay[data-kind="item"] .story-symbol { font-size: 72px; margin-bottom: 12px; }
+/* Keep transient messages above the nearby-object action buttons. */
+#game-message { bottom: calc(env(safe-area-inset-bottom) + 180px); }

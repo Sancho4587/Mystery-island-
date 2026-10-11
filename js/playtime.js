@@ -18,7 +18,7 @@ export function charge(usage, from, to, active) {
   }
 }
 
-export function createPlaytime({save, pause, resume, active, goHome, canGoHome, sleep}) {
+export function createPlaytime({save, pause, resume, active, goHome, canGoHome, sleep, continueGame = resume}) {
   const KEY = 'mystery-island-parent-v1';
   let data;
   try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
@@ -51,7 +51,10 @@ export function createPlaytime({save, pause, resume, active, goHome, canGoHome, 
   function stopScreen() {
     locked=true; parentOpen=false; authorized=false; save();
     show('На сегодня приключение завершено');
-    text('Твой прогресс сохранён. Завтра продолжим с этого места.');
+    text(data.rest[dayKey(new Date())]
+      ? 'Вы выбрали «Лечь спать», поэтому игра остановлена до завтра. Если это было случайно, родитель может разрешить продолжение через PIN.'
+      : 'Дневной лимит закончился. Родитель может добавить время через PIN.');
+    text('Прогресс сохранён. Можно закрыть вкладку. Крестик меню позади недоступен, пока игра остановлена.');
     button('Родительские настройки', openParents);
   }
   async function hash(pin, salt) {
@@ -87,6 +90,11 @@ export function createPlaytime({save, pause, resume, active, goHome, canGoHome, 
     };
     button('Назад',()=>locked?stopScreen():close()); input.focus();
   }
+  function continueToday() {
+    if (!authorized || remaining() <= 0) return;
+    delete data.rest[dayKey(new Date())];
+    locked=false; persist(); close(); continueGame();
+  }
   function settings() {
     if(!authorized)return;
     show('Время приключений');
@@ -101,7 +109,11 @@ export function createPlaytime({save, pause, resume, active, goHome, canGoHome, 
       if(Object.values(fields).some(i=>!/^\d+$/.test(i.value)||+i.value<1||+i.value>240)){status.textContent='Укажите от 1 до 240 минут.';return;}
       data.settings={weekday:+fields.weekday.value,weekend:+fields.weekend.value};persist();status.textContent='Лимиты сохранены.';
     });
-    button('Добавить 15 минут только сегодня',()=>{const k=dayKey(new Date());data.extra[k]=(data.extra[k]||0)+15;delete data.rest[k];persist();status.textContent=`Сегодня осталось ${Math.ceil(remaining()/60)} мин.`;});
+    button('Продолжить с оставшимся временем',()=>{
+      if (remaining() <= 0) { status.textContent='Время закончилось. Добавьте 15 минут или увеличьте лимит.'; return; }
+      continueToday();
+    });
+    button('Добавить 15 минут и продолжить',()=>{const k=dayKey(new Date());data.extra[k]=(data.extra[k]||0)+15;continueToday();});
     button('Готово',()=>{locked=remaining()<=0||!!data.rest[dayKey(new Date())];locked?stopScreen():close();});
   }
   function finishDay() {

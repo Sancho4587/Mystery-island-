@@ -1,3 +1,4 @@
+import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-rpg-bag";
 import { createMovement } from "./movement.js?v=20261009";
 import { drawTown } from "./town.js?v=20261009";
 import { drawHome } from "./home.js?v=20261009";
@@ -33,6 +34,7 @@ const game = {
     maxStamina: 100
   },
 
+  equipment: { ...DEFAULT_EQUIPMENT },
   inventory: [
     { id: "water", name: "Вода", icon: "💧", quantity: 5, unit: "л" },
     { id: "food", name: "Еда", icon: "🥪", quantity: 8, unit: "порц." },
@@ -81,43 +83,23 @@ function openPanel(name) {
   }
 }
 
+const inventoryUI = createInventoryUI({
+  game,
+  save: () => saveGame({ silent: true }),
+  readNote: () => {
+    closePanels();
+    openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
+  },
+  inspectKey: () => {
+    closePanels();
+    openStoryDialogue("Маленький ключ, найденный в углублении у фонтана благодаря старой записке.", {
+      kind: "item", title: "Первый ключ", symbol: "🗝️", returnPanel: "backpack"
+    });
+  }
+});
+
 function renderInventory() {
-  const container = document.getElementById("inventory-container");
-  container.replaceChildren();
-
-  game.inventory.forEach(item => {
-    const readable = item.id === "old-note" || item.id === "first-key";
-    const slot = document.createElement(readable ? "button" : "div");
-    if (readable) {
-      slot.type = "button";
-      slot.setAttribute("aria-label", item.id === "old-note" ? "Прочитать старую записку" : "Осмотреть первый ключ");
-      slot.addEventListener("click", () => {
-        closePanels();
-        if (item.id === "old-note") {
-          openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
-        } else {
-          openStoryDialogue("Маленький ключ, найденный в углублении у фонтана благодаря старой записке.", {
-            kind: "item", title: "Первый ключ", symbol: "🗝️", returnPanel: "backpack"
-          });
-        }
-      });
-    }
-    slot.className = "inventory-slot";
-
-    const icon = document.createElement("span");
-    icon.className = "item-icon";
-    icon.textContent = item.icon;
-
-    const name = document.createElement("span");
-    name.className = "item-name";
-    name.textContent = item.name;
-
-    const amount = document.createElement("span");
-    amount.textContent = `${item.quantity} ${item.unit}`;
-
-    slot.append(icon, name, amount);
-    container.appendChild(slot);
-  });
+  inventoryUI.render();
 }
 
 function getAdventureProgress() {
@@ -509,6 +491,7 @@ function saveGame({ silent = false } = {}) {
         location: game.location,
         returnPosition: game.returnPosition,
         player: game.player,
+        equipment: game.equipment,
         inventory: game.inventory
       })
     );
@@ -554,6 +537,8 @@ if (
         ...data.player
       };
     }
+
+    game.equipment = normalizeEquipment(data.equipment);
 
     if (Array.isArray(data.inventory)) {
       game.inventory = data.inventory;

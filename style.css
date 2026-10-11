@@ -552,3 +552,13 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 .story-action { width: 100%; max-width: 300px; white-space: normal; }
 .story-overlay[data-kind="keeper"] .story-card p { font-size: clamp(16px, 2.5vw, 19px); }
 .story-overlay[data-kind="keeper"] .story-close { background: #e5e7cb; color: #33432e; border-color: #a5b28e; }
+
+
+/* Parent and bedtime panels keep text and controls in normal document flow. */
+.time-overlay {position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(9,30,26,.88);}
+.time-card {width:min(100%,480px);max-height:90dvh;overflow:auto;background:#fff6df;color:#24352e;border:2px solid #c6ad77;border-radius:24px;padding:24px;box-shadow:0 18px 50px #0007;}
+.time-card h2 {margin-top:0;font-size:24px;}
+.time-card p {line-height:1.5;}
+.time-card .game-button {display:block;width:100%;margin-top:12px;white-space:normal;}
+.time-card label {display:block;margin:14px 0;}
+.time-card input {display:block;width:100%;min-height:48px;margin:8px 0;padding:10px;font:inherit;border:1px solid #948566;border-radius:10px;background:white;color:#24352e;}

@@ -1,3 +1,5 @@
+import { createPlaytime } from "./playtime.js?v=20261011-time";
+let playtime = null;
 import { createCollision } from "./collision.js?v=20261010-keeper";
 import { locationTasks, transitionPermission, completeTask, restoreProgress } from "./progression.js?v=20261010-keeper";
 import { drawForest } from "./forest.js?v=20261010-keeper";
@@ -75,6 +77,7 @@ function closePanels() {
 }
 
 function openPanel(name) {
+  if (playtime?.blocked()) return;
   closePanels();
 
   if (!panels[name]) return;
@@ -582,6 +585,7 @@ function updatePlayerStatus() {
 }
 
 function gameLoop(timestamp) {
+  if (playtime?.blocked()) game.running = false;
     movement.update(timestamp);
   updatePlayerStatus();
   const locationLabel = document.getElementById("location-name");
@@ -757,6 +761,36 @@ function restoreSafeTownPosition() {
 resizeCanvas();
 loadGame();
 restoreSafeTownPosition();
+playtime = createPlaytime({
+  save: () => saveGame({ silent: true }),
+  pause: () => { movement.cancel(); game.running = false; },
+  resume: () => { game.running = Object.values(panels).every(p => p.classList.contains("hidden")) && dialogueOverlay.classList.contains("hidden"); },
+  active: () => panels.menu.classList.contains("hidden") && (game.running || !panels.backpack.classList.contains("hidden") || !panels.map.classList.contains("hidden") || !dialogueOverlay.classList.contains("hidden")),
+  canGoHome: () => ["town", "homeInterior"].includes(game.location),
+  goHome: returnHome,
+  sleep: () => { game.player.stamina = game.player.maxStamina; saveGame({ silent: true }); }
+});
+function returnHome() {
+  if (!dialogueOverlay.classList.contains("hidden")) closeStoryDialogue();
+  closePanels();
+  if (!["town", "homeInterior"].includes(game.location)) return;
+  movement.cancel();
+  game.returnPosition = { x: 220, y: 180 };
+  game.location = "homeInterior";
+  game.player.x = canvas.clientWidth * 0.49;
+  game.player.y = canvas.clientHeight * 0.82;
+  drawTemporaryWorld();
+  saveGame({ silent: true });
+  showMessage("Ты дома. В меню можно выбрать «Отдохнуть до завтра».");
+}
+document.getElementById("btn-parents").onclick = () => playtime.openParents();
+document.getElementById("btn-return-home").onclick = () => {
+  if (!["town", "homeInterior"].includes(game.location)) { showMessage("Быстрое возвращение домой доступно в городе. Сначала вернись в город."); return; }
+  closePanels();
+  openStoryDialogue("Вернуться домой отдохнуть?", {title:"Дорога домой",symbol:"🏠",action:{label:"Вернуться домой",run:returnHome},closeLabel:"Остаться"});
+};
+document.getElementById("btn-rest").onclick = () => {
+  if (game.location !== "homeInterior") { showMessage("Чтобы лечь спать, сначала вернись домой."); return; }
+  playtime.finishDay();
+};
 requestAnimationFrame(gameLoop);
-
-

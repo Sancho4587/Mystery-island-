@@ -14,7 +14,7 @@
 
   <title>Mystery Island: The Lost Keys</title>
 
-  <link rel="stylesheet" href="./style.css?v=20261010-rpg-bag">
+  <link rel="stylesheet" href="./style.css?v=20261010-weight">
 </head>
 
 <body>
@@ -40,6 +40,11 @@
           Родной город
         </div>
 
+        <div class="player-condition">
+          <span id="stamina-label">Выносливость: 100%</span>
+          <progress id="stamina-meter" value="100" max="100" aria-label="Выносливость"></progress>
+          <span id="load-warning"></span>
+        </div>
       </header>
 
       <!-- GAME CONTROLS -->
@@ -104,6 +109,12 @@
       <div class="backpack-layout">
         <section class="backpack-items" aria-labelledby="bag-items-title">
           <h3 id="bag-items-title">Предметы</h3>
+          <div id="carried-weight" data-state="available" role="status">
+            <strong id="weight-total"></strong>
+            <progress id="weight-meter" max="15" value="0" aria-label="Переносимый вес"></progress>
+            <p id="weight-breakdown"></p>
+            <p id="weight-status"></p>
+          </div>
           <div id="backpack-capacity" data-state="available" role="status">
             <div class="capacity-line"><strong id="capacity-count"></strong><span id="capacity-status"></span></div>
             <progress id="capacity-meter" max="12" value="0" aria-label="Заполненность рюкзака"></progress>
@@ -206,7 +217,7 @@
   </div>
 
   <!-- GAME MODULES -->
-  <script type="module" src="./js/main.js?v=20261010-rpg-bag"></script>
+  <script type="module" src="./js/main.js?v=20261010-weight"></script>
 
 </body>
 </html>

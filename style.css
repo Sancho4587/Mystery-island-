@@ -519,3 +519,26 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
   .equipment-avatar { top: 4px; height: 200px; }
   #equipment-slots { padding-top: 210px; }
 }
+
+/* Weight is primary; slot capacity remains a compact secondary counter. */
+#carried-weight { --load-color: #387451; padding: 12px; margin-bottom: 10px; border: 1px solid #a7b88b; border-radius: 12px; background: #e8eed7; }
+#carried-weight[data-state="near"] { --load-color: #966315; background: #fff0c7; border-color: #bc8b35; }
+#carried-weight[data-state="over"] { --load-color: #a8372b; background: #ffe0d5; border-color: #ba594b; }
+#weight-total { display: block; font-size: 17px; }
+#weight-meter { width: 100%; display: block; height: 9px; margin: 9px 0; border: 0; background: #cbd3ba; accent-color: var(--load-color); border-radius: 5px; overflow: hidden; }
+#weight-meter::-webkit-progress-bar { background: #cbd3ba; }
+#weight-meter::-webkit-progress-value { background: var(--load-color); }
+#weight-meter::-moz-progress-bar { background: var(--load-color); }
+#weight-breakdown, #weight-status { margin: 5px 0 0; font-size: 12px; line-height: 1.4; }
+#weight-status { color: var(--load-color); font-weight: 600; }
+#backpack-capacity { padding: 8px 10px; }
+#capacity-meter { display: none; }
+.player-condition { margin-top: 8px; max-width: 230px; font-size: 11px; color: #fff6df; }
+#stamina-meter { display: block; width: 150px; height: 5px; margin-top: 4px; border: 0; background: #294b37; accent-color: #b4dc82; }
+#stamina-meter::-webkit-progress-bar { background: #294b37; }
+#stamina-meter::-webkit-progress-value { background: #b4dc82; }
+#stamina-meter::-moz-progress-bar { background: #b4dc82; }
+#load-warning { display: block; margin-top: 4px; color: #ffe0a0; }
+#load-warning:empty { display: none; }
+.item-weight { font-weight: 600; color: #4c6147; }
+@media(max-width:650px) { #carried-weight { padding: 8px; } #weight-total { font-size: 14px; } #weight-breakdown, #weight-status { font-size: 11px; } }

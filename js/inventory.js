@@ -1,3 +1,4 @@
+import { getCarriedLoad, itemWeight, formatWeight } from "./weight.js?v=20261010-weight";
 export const GEAR = {
   'travel-shirt': { id: 'travel-shirt', name: 'Походная рубашка', icon: '👕', slot: 'body' },
   'travel-trousers': { id: 'travel-trousers', name: 'Походные брюки', icon: '👖', slot: 'legs' },
@@ -77,10 +78,15 @@ export function createInventoryUI({ game, save, readNote, inspectKey }) {
       map: 'Карта для исследования острова.', compass: 'Компас для определения сторон света.'
     };
     const gear = GEAR[item.id];
-    const description = gear?.slot === 'back' ? 'Вмещает 12 ячеек. Одинаковые предметы хранятся вместе.'
+    const description = gear?.slot === 'back' ? 'Вмещает 12 ячеек. Одинаковые предметы хранятся вместе. Собственный вес рюкзака входит в нагрузку.'
       : gear ? (selected.equipped ? 'Надето на персонаже. Место в рюкзаке не занимает.' : 'Лежит в рюкзаке. Можно надеть на персонажа.')
       : descriptions[item.id] || 'Предмет из рюкзака.';
     area.appendChild(element('p', '', description));
+    const quantity = selected.equipped ? 1 : item.quantity;
+    const weightText = item.id === 'water' ? formatWeight(itemWeight(item)) + ' / л'
+      : item.id === 'food' ? formatWeight(itemWeight(item)) + ' / порцию'
+      : formatWeight(itemWeight(item)) + ' / шт.';
+    area.appendChild(element('p', 'item-weight', 'Вес: ' + weightText + (quantity > 1 ? ' · Всего: ' + formatWeight(itemWeight(item) * quantity) : '')));
     if (!gear || gear.slot === 'back') return;
     const state = getBackpackState(game);
     const hasStack = game.inventory.some(entry => entry.id === item.id && entry.quantity > 0);
@@ -102,6 +108,17 @@ export function createInventoryUI({ game, save, readNote, inspectKey }) {
 
   function render() {
     const state = getBackpackState(game);
+    const load = getCarriedLoad(game);
+    const weight = document.getElementById('carried-weight');
+    weight.dataset.state = load.excess > 0 ? 'over' : load.ratio >= 0.9 ? 'near' : 'available';
+    document.getElementById('weight-total').textContent = 'Вес: ' + formatWeight(load.total) + ' / ' + formatWeight(load.limit);
+    document.getElementById('weight-breakdown').textContent = 'Рюкзак с вещами: ' + formatWeight(load.backpack) + ' · Надето: ' + formatWeight(load.worn);
+    document.getElementById('weight-status').textContent = load.excess > 0
+      ? 'Перегруз +' + formatWeight(load.excess) + ': движение медленнее, усталость быстрее.'
+      : load.ratio >= 0.9 ? 'Близко к пределу нагрузки' : 'Нагрузка в пределах нормы';
+    const weightMeter = document.getElementById('weight-meter');
+    weightMeter.max = load.limit;
+    weightMeter.value = Math.min(load.total, load.limit);
     const capacity = document.getElementById('backpack-capacity');
     capacity.dataset.state = state.overflow ? 'over' : state.free === 0 ? 'full' : 'available';
     document.getElementById('capacity-count').textContent = state.used + ' / ' + state.capacity + ' ячеек';

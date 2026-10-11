@@ -211,14 +211,20 @@ dialogueOverlay.setAttribute("aria-modal", "true");
 dialogueOverlay.setAttribute("aria-labelledby", "story-title");
 dialogueOverlay.innerHTML = `
   <div class="story-card">
-    <div class="story-symbol" aria-hidden="true">📜</div>
-    <h2 id="story-title">Старая записка</h2>
-    <p id="story-text"></p>
-    <button class="game-button story-close" type="button">Понятно</button>
+    <div class="story-content">
+      <div class="story-symbol" aria-hidden="true">📜</div>
+      <h2 id="story-title">Старая записка</h2>
+      <p id="story-text"></p>
+    </div>
+    <div class="story-actions">
+      <p class="story-status hidden"></p>
+      <button class="game-button story-close" type="button">Понятно</button>
+    </div>
   </div>`;
 document.getElementById("game-screen").appendChild(dialogueOverlay);
 const storyText = dialogueOverlay.querySelector("#story-text");
 const storyClose = dialogueOverlay.querySelector(".story-close");
+const storyStatus = dialogueOverlay.querySelector(".story-status");
 let storyPreviousFocus = null;
 function closeStoryDialogue() {
   dialogueOverlay.classList.add("hidden");
@@ -226,10 +232,13 @@ function closeStoryDialogue() {
   if (storyPreviousFocus && storyPreviousFocus.isConnected) storyPreviousFocus.focus();
 }
 storyClose.addEventListener("click", closeStoryDialogue);
-function openStoryDialogue(text) {
+function openStoryDialogue(text, { kind = "message", status = "" } = {}) {
   movement.cancel();
   storyPreviousFocus = document.activeElement;
   dialogueOverlay.dataset.location = game.location;
+  dialogueOverlay.dataset.kind = kind;
+  storyStatus.textContent = status;
+  storyStatus.classList.toggle("hidden", !status);
   storyText.textContent = text;
   showMessage("");
   game.running = false;
@@ -274,9 +283,13 @@ chestButton.addEventListener("click", () => {
       unit: "шт."
     });
     saveGame({ silent: true });
-    openStoryDialogue("Первый ключ спрятан там, где слышна вода. Записка добавлена в рюкзак!");
+    openStoryDialogue("Первый ключ спрятан там, где слышна вода.", {
+      kind: "scroll", status: "Записка добавлена в рюкзак!"
+    });
   } else {
-    openStoryDialogue("Первый ключ спрятан там, где слышна вода. Записка уже лежит в рюкзаке.");
+    openStoryDialogue("Первый ключ спрятан там, где слышна вода.", {
+      kind: "scroll", status: "Записка уже лежит в рюкзаке."
+    });
   }
 });
 

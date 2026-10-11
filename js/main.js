@@ -1,13 +1,15 @@
+import { createCivicUI, drawCivic, civicState, exploreCivic, nearestPlace, PLACES } from "./civic.js?v=20261011-civic";
+let civicUI = null;
 import { createPlaytime } from "./playtime.js?v=20261011-night";
 let playtime = null;
-import { createCollision } from "./collision.js?v=20261010-keeper";
-import { locationTasks, transitionPermission, completeTask, restoreProgress } from "./progression.js?v=20261010-keeper";
-import { drawForest } from "./forest.js?v=20261010-keeper";
-import { forestGatePosition, forestExitPosition } from "./world-layout.js?v=20261010-keeper";
+import { createCollision } from "./collision.js?v=20261011-civic";
+import { locationTasks, transitionPermission, completeTask, restoreProgress } from "./progression.js?v=20261011-civic";
+import { drawForest } from "./forest.js?v=20261011-civic";
+import { forestGatePosition, forestExitPosition } from "./world-layout.js?v=20261011-civic";
 import { getCarriedLoad, CARRY_LIMIT_KG, itemWeight, formatWeight } from "./weight.js?v=20261010-weight";
 import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-weight";
-import { createMovement } from "./movement.js?v=20261010-keeper";
-import { drawTown } from "./town.js?v=20261010-keeper";
+import { createMovement } from "./movement.js?v=20261011-civic";
+import { drawTown, drawPlayer } from "./town.js?v=20261011-civic";
 import { drawHome } from "./home.js?v=20261009";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
@@ -77,7 +79,7 @@ function closePanels() {
 }
 
 function openPanel(name) {
-  if (playtime?.blocked()) return;
+  if (playtime?.blocked() || civicUI?.isOpen()) return;
   closePanels();
 
   if (!panels[name]) return;
@@ -138,7 +140,7 @@ function getAdventureProgress() {
 }
 
 function locationName() {
-  return game.location === "forest" ? "Лесная поляна" : game.location === "homeInterior" ? "Семейный дом" : "Родной город";
+  return game.location === "townCivic" ? "Город · Общественный квартал" : game.location === "forest" ? "Лесная поляна" : game.location === "homeInterior" ? "Семейный дом" : "Родной город";
 }
 
 function renderMap() {
@@ -173,6 +175,30 @@ function renderMap() {
     steps.appendChild(row);
   });
   container.append(location, heading, summary, objective, steps);
+  const civicMap = document.createElement("section");
+  civicMap.className = "civic-map";
+  const mapTitle = document.createElement("h3"); mapTitle.textContent = "Общественный квартал";
+  civicMap.appendChild(mapTitle);
+  const known = civicState(game);
+  const grid = document.createElement("div"); grid.className = "discovery-grid";
+  for(let y=0;y<12;y++) for(let x=0;x<10;x++){
+    const cell=document.createElement("span"); const revealed=known.fog.includes(y*10+x);
+    cell.className=revealed?"explored":"unexplored";
+    if(revealed){
+      if(x===5||((y===4||y===8)&&x>0&&x<9))cell.style.background="#dfc9a0";
+      const place=PLACES.find(p=>Math.floor(p.x*10)===x&&Math.floor(p.y*12)===y&&known.seen.includes(p.id));
+      if(place){cell.textContent=place.icon;cell.title=place.name;}
+      if(game.location==="townCivic"&&Math.floor(game.player.x/canvas.clientWidth*10)===x&&Math.floor(game.player.y/canvas.clientHeight*12)===y){cell.textContent="●";cell.title="Ты здесь";}
+    }
+    grid.appendChild(cell);
+  }
+  civicMap.appendChild(grid);
+  for(const place of PLACES) {
+    const line=document.createElement("p");
+    line.textContent=known.seen.includes(place.id)?place.icon+" "+place.name+(known.studied.includes(place.id)?" · Изучено":""):"? Неизученное место";
+    civicMap.appendChild(line);
+  }
+  container.appendChild(civicMap);
 
   if (game.inventory.some(item => item.id === "old-note")) {
     const readNote = document.createElement("button");
@@ -191,10 +217,15 @@ function renderMap() {
 function drawTemporaryWorld() {
   if (game.location === "homeInterior") {
     drawHome(context, canvas, game);
+  } else if (game.location === "townCivic") {
+    drawCivic(context, canvas, game, drawPlayer);
   } else if (game.location === "forest") {
     drawForest(context, canvas, game);
   } else {
     drawTown(context, canvas, game);
+    const sign = civicEntrance();
+    context.fillStyle="#f4e3b8";context.fillRect(sign.x-62,sign.y-15,124,25);
+    context.fillStyle="#304b3d";context.textAlign="center";context.font="bold 11px sans-serif";context.fillText("↑ Общественный квартал",sign.x,sign.y+2);
   }
 }
 
@@ -585,7 +616,8 @@ function updatePlayerStatus() {
 }
 
 function gameLoop(timestamp) {
-  if (playtime?.blocked()) game.running = false;
+  if (playtime?.blocked() || civicUI?.isOpen()) game.running = false;
+  updateCivicActions();
     movement.update(timestamp);
   updatePlayerStatus();
   const locationLabel = document.getElementById("location-name");
@@ -629,6 +661,7 @@ function saveGame({ silent = false } = {}) {
         player: game.player,
         world: game.world,
         progress: game.progress,
+        civic: civicState(game),
         equipment: game.equipment,
         inventory: game.inventory
       })
@@ -652,7 +685,7 @@ function loadGame() {
     if (
   data.location === "town" ||
   data.location === "homeInterior" ||
-  data.location === "forest"
+  data.location === "forest" || data.location === "townCivic"
 ) {
   game.location = data.location;
 }
@@ -696,6 +729,8 @@ if (
     if (Array.isArray(data.inventory)) {
       game.inventory = data.inventory;
     }
+    game.civic = data.civic && typeof data.civic === "object" ? data.civic : {};
+    civicState(game);
     restoreProgress(game, data.progress);
   } catch (error) {
     console.error("Save loading failed:", error);
@@ -761,21 +796,26 @@ function restoreSafeTownPosition() {
 resizeCanvas();
 loadGame();
 restoreSafeTownPosition();
+civicUI = createCivicUI({
+  game, save: () => saveGame({silent:true}),
+  pause: () => { movement.cancel(); game.running=false; },
+  resume: () => { game.running=!playtime?.blocked() && Object.values(panels).every(p=>p.classList.contains("hidden")) && dialogueOverlay.classList.contains("hidden"); }
+});
 playtime = createPlaytime({
   save: () => saveGame({ silent: true }),
   pause: () => { movement.cancel(); game.running = false; },
-  resume: () => { game.running = Object.values(panels).every(p => p.classList.contains("hidden")) && dialogueOverlay.classList.contains("hidden"); },
-  active: () => panels.menu.classList.contains("hidden") && (game.running || !panels.backpack.classList.contains("hidden") || !panels.map.classList.contains("hidden") || !dialogueOverlay.classList.contains("hidden")),
+  resume: () => { game.running = Object.values(panels).every(p => p.classList.contains("hidden")) && dialogueOverlay.classList.contains("hidden") && !civicUI?.isOpen(); },
+  active: () => panels.menu.classList.contains("hidden") && (game.running || !panels.backpack.classList.contains("hidden") || !panels.map.classList.contains("hidden") || !dialogueOverlay.classList.contains("hidden") || civicUI?.isOpen()),
   atHome: () => game.location === "homeInterior",
-  canGoHome: () => ["town", "homeInterior"].includes(game.location),
+  canGoHome: () => ["town", "homeInterior", "townCivic"].includes(game.location),
   goHome: returnHome,
-  continueGame: () => { closePanels(); if (!dialogueOverlay.classList.contains("hidden")) game.running = false; },
+  continueGame: () => { closePanels(); if (!dialogueOverlay.classList.contains("hidden") || civicUI?.isOpen()) game.running = false; },
   sleep: () => { game.player.stamina = game.player.maxStamina; saveGame({ silent: true }); }
 });
 function returnHome() {
   if (!dialogueOverlay.classList.contains("hidden")) closeStoryDialogue();
   closePanels();
-  if (!["town", "homeInterior"].includes(game.location)) return;
+  if (!["town", "homeInterior", "townCivic"].includes(game.location)) return;
   movement.cancel();
   game.returnPosition = { x: 220, y: 180 };
   game.location = "homeInterior";
@@ -787,7 +827,7 @@ function returnHome() {
 }
 document.getElementById("btn-parents").onclick = () => playtime.openParents();
 document.getElementById("btn-return-home").onclick = () => {
-  if (!["town", "homeInterior"].includes(game.location)) { showMessage("Быстрое возвращение домой доступно в городе. Сначала вернись в город."); return; }
+  if (!["town", "homeInterior", "townCivic"].includes(game.location)) { showMessage("Быстрое возвращение домой доступно в городе. Сначала вернись в город."); return; }
   closePanels();
   openStoryDialogue("Вернуться домой отдохнуть?", {title:"Дорога домой",symbol:"🏠",action:{label:"Вернуться домой",run:returnHome},closeLabel:"Остаться"});
 };
@@ -796,3 +836,36 @@ document.getElementById("btn-rest").onclick = () => {
   playtime.finishDay();
 };
 requestAnimationFrame(gameLoop);
+
+function civicEntrance() {return {x:canvas.clientWidth*.40,y:Math.max(150,canvas.clientHeight*.24)};}
+const civicActions=document.createElement("div");civicActions.className="civic-actions hidden";
+document.getElementById("game-screen").appendChild(civicActions);
+let civicActionKey="";
+function updateCivicActions(){
+  if(!game.running){civicActions.classList.add("hidden");return;}
+  let key="",place=null;
+  if(game.location==="town"){
+    const p=civicEntrance();if(Math.hypot(game.player.x-p.x,game.player.y-p.y)<68)key="enter";
+  }else if(game.location==="townCivic"){
+    if(exploreCivic(canvas,game))saveGame({silent:true});
+    place=nearestPlace(canvas,game);
+    if(place)key=place.id;
+    else if(Math.hypot(game.player.x-canvas.clientWidth*.5,game.player.y-(canvas.clientHeight-145))<65)key="exit";
+  }
+  civicActions.classList.toggle("hidden",!key);
+  if(key===civicActionKey)return;civicActionKey=key;civicActions.replaceChildren();
+  function action(label,run){const b=document.createElement("button");b.className="game-button";b.textContent=label;b.onclick=()=>{if(game.running)run();};civicActions.appendChild(b);}
+  if(key==="enter"||key==="exit")action(key==="enter"?"К общественному кварталу":"На городскую площадь",()=>{
+    const dest=key==="enter"?"townCivic":"town";
+    if(!transitionPermission(game,game.location,dest).allowed)return;
+    movement.cancel();game.location=dest;
+    const p=dest==="town"?civicEntrance():{x:canvas.clientWidth*.5,y:canvas.clientHeight-165};
+    game.player.x=p.x;game.player.y=p.y+ (dest==="town"?35:0);
+    if(!game.progress.visited.includes(dest))game.progress.visited.push(dest);
+    if(dest==="town")restoreSafeTownPosition();
+    saveGame({silent:true});
+  });
+  else if(place){action("Изучить · "+place.name,()=>civicUI.study(place.id));action("Войти",()=>civicUI.episode(place.id));}
+}
+document.getElementById("btn-quests").onclick=()=>{closePanels();civicUI.journal();};
+

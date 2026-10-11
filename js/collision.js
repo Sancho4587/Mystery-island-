@@ -1,3 +1,4 @@
+import { forestObstacles, forestGatePosition } from "./world-layout.js?v=20261010-forest";
 
 /*
  * MYSTERY ISLAND: THE LOST KEYS
@@ -17,6 +18,8 @@ export function createCollision(canvas, game) {
     
 const w = canvas.clientWidth;
 const h = canvas.clientHeight;
+
+    if (game.location === "forest") return forestObstacles(canvas);
 
     if (game.location === "homeInterior") {
       return [
@@ -60,7 +63,11 @@ const h = canvas.clientHeight;
     }
 
     
+    const gate = forestGatePosition(canvas);
     return [
+      { id: "gate-left", type: "rectangle", x: gate.x - 42, y: gate.y - 30, width: 9, height: 33, label: "Калитка" },
+      { id: "gate-right", type: "rectangle", x: gate.x + 33, y: gate.y - 30, width: 9, height: 33, label: "Калитка" },
+      ...(!game.world?.forestGateOpen ? [{ id: "gate-locked", type: "rectangle", x: gate.x - 33, y: gate.y - 30, width: 66, height: 30, label: "Закрытая калитка" }] : []),
       {
         id: "home",
         type: "rectangle",

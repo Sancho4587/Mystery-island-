@@ -1,4 +1,4 @@
-import { forestObstacles, forestGatePosition } from "./world-layout.js?v=20261010-forest";
+import { forestObstacles, forestGatePosition, townWallObstacles, gatekeeperPosition } from "./world-layout.js?v=20261010-keeper";
 
 /*
  * MYSTERY ISLAND: THE LOST KEYS
@@ -65,9 +65,11 @@ const h = canvas.clientHeight;
     
     const gate = forestGatePosition(canvas);
     return [
-      { id: "gate-left", type: "rectangle", x: gate.x - 42, y: gate.y - 30, width: 9, height: 33, label: "Калитка" },
-      { id: "gate-right", type: "rectangle", x: gate.x + 33, y: gate.y - 30, width: 9, height: 33, label: "Калитка" },
-      ...(!game.world?.forestGateOpen ? [{ id: "gate-locked", type: "rectangle", x: gate.x - 33, y: gate.y - 30, width: 66, height: 30, label: "Закрытая калитка" }] : []),
+      ...townWallObstacles(canvas),
+      { id: "gatekeeper", type: "circle", ...gatekeeperPosition(canvas), radius: 10, label: "Хранитель ворот" },
+      { id: "gate-left", type: "rectangle", x: gate.x - 12, y: gate.y - 42, width: 24, height: 9, label: "Ворота" },
+      { id: "gate-right", type: "rectangle", x: gate.x - 12, y: gate.y + 33, width: 24, height: 9, label: "Ворота" },
+      ...(!game.world?.forestGateOpen ? [{ id: "gate-locked", type: "rectangle", x: gate.x - 7, y: gate.y - 33, width: 14, height: 66, label: "Закрытые ворота" }] : []),
       {
         id: "home",
         type: "rectangle",

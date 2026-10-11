@@ -86,24 +86,22 @@ const collision = createCollision(canvas, game);
 
     if (segmentLength < MIN_POINT_DISTANCE) return;
 
-    if (state.distance + segmentLength > MAX_ROUTE) {
-      const remaining = MAX_ROUTE - state.distance;
+    // Never draw a path across a fountain, wall or another obstacle.
+    // Clamp before checking so long finger gestures obey the same rule.
+    const remaining = MAX_ROUTE - state.distance;
+    if (remaining <= 0) return;
+    const fraction = Math.min(1, remaining / segmentLength);
+    const nextPoint = {
+      x: previous.x + (point.x - previous.x) * fraction,
+      y: previous.y + (point.y - previous.y) * fraction
+    };
 
-      if (remaining <= 0) return;
-
-      const fraction = remaining / segmentLength;
-
-      state.route.push({
-        x: previous.x + (point.x - previous.x) * fraction,
-        y: previous.y + (point.y - previous.y) * fraction
-      });
-
-      state.distance = MAX_ROUTE;
+    if (!collision.canMove(previous.x, previous.y, nextPoint.x, nextPoint.y)) {
       return;
     }
 
-    state.route.push(point);
-    state.distance += segmentLength;
+    state.route.push(nextPoint);
+    state.distance += segmentLength * fraction;
   }
 
   function finishDrawing(event) {

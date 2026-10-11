@@ -1,5 +1,6 @@
-import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-rpg-bag";
-import { createMovement } from "./movement.js?v=20261009";
+import { getCarriedLoad, CARRY_LIMIT_KG, itemWeight, formatWeight } from "./weight.js?v=20261010-weight";
+import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-weight";
+import { createMovement } from "./movement.js?v=20261010-weight";
 import { drawTown } from "./town.js?v=20261009";
 import { drawHome } from "./home.js?v=20261009";
 /*
@@ -31,7 +32,8 @@ const game = {
     x: 220,
     y: 180,
     stamina: 100,
-    maxStamina: 100
+    maxStamina: 100,
+    maxCarryWeight: CARRY_LIMIT_KG
   },
 
   equipment: { ...DEFAULT_EQUIPMENT },
@@ -88,12 +90,12 @@ const inventoryUI = createInventoryUI({
   save: () => saveGame({ silent: true }),
   readNote: () => {
     closePanels();
-    openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
+    openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", status: "Вес: " + formatWeight(itemWeight({ id: "old-note" })), returnPanel: "backpack" });
   },
   inspectKey: () => {
     closePanels();
     openStoryDialogue("Маленький ключ, найденный в углублении у фонтана благодаря старой записке.", {
-      kind: "item", title: "Первый ключ", symbol: "🗝️", returnPanel: "backpack"
+      kind: "item", title: "Первый ключ", symbol: "🗝️", status: "Вес: " + formatWeight(itemWeight({ id: "first-key" })), returnPanel: "backpack"
     });
   }
 });
@@ -454,8 +456,22 @@ function isAtHomeExit() {
   );
 }
 
+function updatePlayerStatus() {
+  const load = getCarriedLoad(game);
+  const label = document.getElementById("stamina-label");
+  const stamina = Math.round(game.player.stamina);
+  const text = "Выносливость: " + stamina + "%";
+  if (label.textContent !== text) label.textContent = text;
+  document.getElementById("stamina-meter").value = game.player.stamina;
+  const status = document.getElementById("load-warning");
+  const warning = load.excess > 0 ? "Перегруз +" + load.excess.toLocaleString("ru-RU", {maximumFractionDigits: 2}) + " кг"
+    : game.player.stamina < 20 ? "Устала — остановись, чтобы отдохнуть" : "";
+  if (status.textContent !== warning) status.textContent = warning;
+}
+
 function gameLoop(timestamp) {
     movement.update(timestamp);
+  updatePlayerStatus();
   chestButton.classList.toggle("hidden", !game.running || !isNearChest());
   fountainButton.classList.toggle("hidden", !game.running || !isNearFountain());
   if (game.location === "town") {
@@ -538,6 +554,10 @@ if (
       };
     }
 
+    game.player.maxStamina = 100;
+    game.player.stamina = Number.isFinite(game.player.stamina) ? Math.max(0, Math.min(100, game.player.stamina)) : 100;
+    game.player.maxCarryWeight = Number.isFinite(game.player.maxCarryWeight) && game.player.maxCarryWeight > 0
+      ? game.player.maxCarryWeight : CARRY_LIMIT_KG;
     game.equipment = normalizeEquipment(data.equipment);
 
     if (Array.isArray(data.inventory)) {

@@ -35,7 +35,7 @@ const h = canvas.clientHeight;
           x: w * 0.37,
           y: h * 0.60,
           width: w * 0.24,
-          height: h * 0.10,
+          height: h * 0.12,
           label: "Стол"
         },
         {
@@ -129,11 +129,54 @@ const h = canvas.clientHeight;
         label: "Ель"
       },
       {
+        id: "fountain",
+        type: "ellipse",
+        x: w * 0.41,
+        y: h * 0.75,
+        radiusX: 30,
+        radiusY: 16,
+        label: "Фонтан"
+      },
+      {
+        id: "bench-left",
+        type: "rectangle",
+        x: w * 0.28 - 17,
+        y: h * 0.77 - 10,
+        width: 34,
+        height: 20,
+        label: "Скамейка"
+      },
+      {
+        id: "bench-right",
+        type: "rectangle",
+        x: w * 0.52 - 17,
+        y: h * 0.79 - 10,
+        width: 34,
+        height: 20,
+        label: "Скамейка"
+      },
+      {
+        id: "lamp-left",
+        type: "circle",
+        x: w * 0.46,
+        y: h * 0.54,
+        radius: 5,
+        label: "Фонарь"
+      },
+      {
+        id: "lamp-right",
+        type: "circle",
+        x: w * 0.59,
+        y: h * 0.61,
+        radius: 5,
+        label: "Фонарь"
+      },
+      {
         id: "rock-left",
         type: "circle",
         x: w * 0.19,
         y: h * 0.63,
-        radius: 18,
+        radius: 23,
         label: "Камень"
       },
       {
@@ -141,7 +184,7 @@ const h = canvas.clientHeight;
         type: "circle",
         x: w * 0.71,
         y: h * 0.47,
-        radius: 11,
+        radius: 13,
         label: "Камень"
       }
 
@@ -183,6 +226,12 @@ const h = canvas.clientHeight;
         ) {
           return true;
         }
+      }
+
+      if (obstacle.type === "ellipse") {
+        const dx = (x - obstacle.x) / (obstacle.radiusX + PLAYER_RADIUS);
+        const dy = (y - obstacle.y) / (obstacle.radiusY + PLAYER_RADIUS);
+        if (dx * dx + dy * dy < 1) return true;
       }
 
       if (obstacle.type === "rectangle") {
@@ -251,6 +300,8 @@ const h = canvas.clientHeight;
           0,
           Math.PI * 2
         );
+      } else if (obstacle.type === "ellipse") {
+        context.ellipse(obstacle.x, obstacle.y, obstacle.radiusX, obstacle.radiusY, 0, 0, Math.PI * 2);
       } else {
         context.roundRect(
           obstacle.x,
@@ -273,12 +324,12 @@ const h = canvas.clientHeight;
       context.textAlign = "center";
 
       const centerX =
-        obstacle.type === "circle"
+        obstacle.type !== "rectangle"
           ? obstacle.x
           : obstacle.x + obstacle.width / 2;
 
       const centerY =
-        obstacle.type === "circle"
+        obstacle.type !== "rectangle"
           ? obstacle.y
           : obstacle.y + obstacle.height / 2;
 

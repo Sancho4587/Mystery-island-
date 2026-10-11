@@ -5,9 +5,11 @@ export const LOCATION_TASKS = {
     { id: 'town-key', label: 'Разгадать записку и найти первый ключ', item: 'first-key', required: true }
   ],
   homeInterior: [],
-  forest: []
+  forest: [],
+  townCivic: []
 };
 const ROUTES = {
+  'town:townCivic': 'explore', 'townCivic:town': 'return', 'townCivic:homeInterior': 'return',
   'town:homeInterior': 'explore', 'homeInterior:town': 'return',
   'town:forest': 'forward', 'forest:town': 'return'
 };
@@ -43,3 +45,4 @@ export function restoreProgress(game, saved) {
   }
   if (game.world.forestVisited && !game.progress.visited.includes('forest')) game.progress.visited.push('forest');
 }
+

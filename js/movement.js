@@ -1,5 +1,5 @@
 import { movementLoad } from "./weight.js?v=20261010-weight";
-import { createCollision } from "./collision.js?v=20261010-keeper";
+import { createCollision } from "./collision.js?v=20261011-civic";
 /*
  * MYSTERY ISLAND
  * Finger-drawn movement system
@@ -305,4 +305,5 @@ const collision = createCollision(canvas, game);
     cancel: cancelDrawing
   };
 }
+
 

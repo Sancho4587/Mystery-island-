@@ -7,7 +7,8 @@ import { drawHome } from "./home.js?v=20261009";
  * Version 0.2
  */
 
-const GAME_VERSION = "0.2.0";
+const GAME_VERSION = "0.3.0";
+const FIRST_CLUE = "Первый ключ спрятан там, где слышна вода.";
 
 const canvas = document.getElementById("game-canvas");
 const context = canvas.getContext("2d");
@@ -85,7 +86,16 @@ function renderInventory() {
   container.replaceChildren();
 
   game.inventory.forEach(item => {
-    const slot = document.createElement("div");
+    const readable = item.id === "old-note";
+    const slot = document.createElement(readable ? "button" : "div");
+    if (readable) {
+      slot.type = "button";
+      slot.setAttribute("aria-label", "Прочитать старую записку");
+      slot.addEventListener("click", () => {
+        closePanels();
+        openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
+      });
+    }
     slot.className = "inventory-slot";
 
     const icon = document.createElement("span");
@@ -225,18 +235,31 @@ document.getElementById("game-screen").appendChild(dialogueOverlay);
 const storyText = dialogueOverlay.querySelector("#story-text");
 const storyClose = dialogueOverlay.querySelector(".story-close");
 const storyStatus = dialogueOverlay.querySelector(".story-status");
+const storyTitle = dialogueOverlay.querySelector("#story-title");
+const storySymbol = dialogueOverlay.querySelector(".story-symbol");
+let storyReturnPanel = null;
 let storyPreviousFocus = null;
 function closeStoryDialogue() {
   dialogueOverlay.classList.add("hidden");
   game.running = true;
+  if (storyReturnPanel) {
+    const panel = storyReturnPanel;
+    storyReturnPanel = null;
+    openPanel(panel);
+    document.getElementById("close-" + panel).focus();
+    return;
+  }
   if (storyPreviousFocus && storyPreviousFocus.isConnected) storyPreviousFocus.focus();
 }
 storyClose.addEventListener("click", closeStoryDialogue);
-function openStoryDialogue(text, { kind = "message", status = "" } = {}) {
+function openStoryDialogue(text, { kind = "message", status = "", title = "Старая записка", symbol = "📜", returnPanel = null } = {}) {
   movement.cancel();
   storyPreviousFocus = document.activeElement;
   dialogueOverlay.dataset.location = game.location;
   dialogueOverlay.dataset.kind = kind;
+  storyTitle.textContent = title;
+  storySymbol.textContent = symbol;
+  storyReturnPanel = returnPanel;
   storyStatus.textContent = status;
   storyStatus.classList.toggle("hidden", !status);
   storyText.textContent = text;
@@ -283,16 +306,52 @@ chestButton.addEventListener("click", () => {
       unit: "шт."
     });
     saveGame({ silent: true });
-    openStoryDialogue("Первый ключ спрятан там, где слышна вода.", {
+    openStoryDialogue(FIRST_CLUE, {
       kind: "scroll", status: "Записка добавлена в рюкзак!"
     });
   } else {
-    openStoryDialogue("Первый ключ спрятан там, где слышна вода.", {
+    openStoryDialogue(FIRST_CLUE, {
       kind: "scroll", status: "Записка уже лежит в рюкзаке."
     });
   }
 });
 
+
+// Follow the note to the fountain; quest progress is stored as inventory items.
+const fountainButton = document.createElement("button");
+fountainButton.type = "button";
+fountainButton.className = "game-button hidden";
+fountainButton.textContent = "🔍 Осмотреть фонтан";
+fountainButton.style.cssText = chestButton.style.cssText;
+document.getElementById("game-screen").appendChild(fountainButton);
+
+function isNearFountain() {
+  return game.location === "town" &&
+    Math.hypot(game.player.x - canvas.clientWidth * 0.41,
+      game.player.y - canvas.clientHeight * 0.75) <= 80;
+}
+
+fountainButton.addEventListener("click", () => {
+  if (!game.running || !isNearFountain()) return;
+  if (game.inventory.some(item => item.id === "first-key")) {
+    openStoryDialogue("Ты уже нашла здесь первый ключ. Он лежит в рюкзаке.", {
+      title: "Фонтан", symbol: "⛲"
+    });
+    return;
+  }
+  if (!game.inventory.some(item => item.id === "old-note")) {
+    openStoryDialogue("Вода тихо журчит и переливается через каменный край фонтана.", {
+      title: "Фонтан", symbol: "⛲"
+    });
+    return;
+  }
+  game.inventory.push({ id: "first-key", name: "Первый ключ", icon: "🗝️", quantity: 1, unit: "шт." });
+  saveGame({ silent: true });
+  openStoryDialogue("Записка привела тебя к шуму воды. Осмотрев каменный край фонтана, ты замечаешь в углублении маленький ключ.", {
+    kind: "item", title: "Первый ключ найден!", symbol: "🗝️",
+    status: "Ключ добавлен в рюкзак."
+  });
+});
 
 // Automatic exit transition
   
@@ -353,9 +412,10 @@ function isAtHomeExit() {
 function gameLoop(timestamp) {
     movement.update(timestamp);
   chestButton.classList.toggle("hidden", !game.running || !isNearChest());
+  fountainButton.classList.toggle("hidden", !game.running || !isNearFountain());
   if (game.location === "town") {
   homeButton.textContent = "🚪 Войти";
-  homeButton.classList.toggle("hidden", !isNearHomeDoor());
+  homeButton.classList.toggle("hidden", !game.running || !isNearHomeDoor());
 } else {
   homeButton.textContent = "🚪 Выйти";
   homeButton.classList.toggle("hidden", true);

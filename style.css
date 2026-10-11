@@ -392,3 +392,37 @@ button {
   --story-border: #7ca477;
   --story-backdrop: rgba(9, 30, 26, 0.67);
 }
+
+/* Paper belongs to scrolls only; the surrounding frame keeps its location palette. */
+.story-actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.story-actions .story-status { margin: 0; font: 500 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.story-overlay[data-kind="scroll"] .story-card {
+  width: min(92vw, 520px); display: flex; flex-direction: column; gap: 22px;
+  padding: clamp(18px, 4vw, 28px);
+}
+.story-overlay[data-kind="scroll"] .story-content {
+  position: relative; flex: 0 0 auto; margin: 12px 4px;
+  padding: 38px clamp(16px, 4vw, 32px); color: #493016;
+  border-inline: 1px solid #bb8c45;
+  background:
+    radial-gradient(ellipse at 18% 28%, rgba(255,252,221,.65), transparent 65%),
+    linear-gradient(90deg, #d4ae6c, #f2dba1 9%, #f8e6b8 50%, #ecd094 91%, #cba15e);
+  box-shadow: 0 7px 15px rgba(67,40,15,.22), inset 0 0 22px rgba(129,77,24,.15);
+}
+.story-overlay[data-kind="scroll"] .story-content::before,
+.story-overlay[data-kind="scroll"] .story-content::after {
+  content: ""; position: absolute; left: -9px; right: -9px; height: 22px;
+  border: 1px solid #a67a3b; border-radius: 50% / 30%;
+  background: linear-gradient(#b88a48, #f5dda6 30%, #ffeac0 48%, #d4ac69 82%, #ae7d39);
+  box-shadow: 0 3px 4px rgba(75,43,13,.22); pointer-events: none;
+}
+.story-overlay[data-kind="scroll"] .story-content::before { top: -11px; }
+.story-overlay[data-kind="scroll"] .story-content::after { bottom: -11px; }
+.story-overlay[data-kind="scroll"] .story-symbol { display: none; }
+.story-overlay[data-kind="scroll"] .story-content h2 {
+  margin: 0 0 22px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 4vw, 30px);
+}
+.story-overlay[data-kind="scroll"] .story-content p {
+  margin: 0; font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(20px, 3vw, 24px); line-height: 1.6;
+}

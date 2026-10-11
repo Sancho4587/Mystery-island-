@@ -1,4 +1,4 @@
-import { createPlaytime } from "./playtime.js?v=20261011-time";
+import { createPlaytime } from "./playtime.js?v=20261011-time-fix";
 let playtime = null;
 import { createCollision } from "./collision.js?v=20261010-keeper";
 import { locationTasks, transitionPermission, completeTask, restoreProgress } from "./progression.js?v=20261010-keeper";
@@ -768,6 +768,7 @@ playtime = createPlaytime({
   active: () => panels.menu.classList.contains("hidden") && (game.running || !panels.backpack.classList.contains("hidden") || !panels.map.classList.contains("hidden") || !dialogueOverlay.classList.contains("hidden")),
   canGoHome: () => ["town", "homeInterior"].includes(game.location),
   goHome: returnHome,
+  continueGame: () => { closePanels(); if (!dialogueOverlay.classList.contains("hidden")) game.running = false; },
   sleep: () => { game.player.stamina = game.player.maxStamina; saveGame({ silent: true }); }
 });
 function returnHome() {

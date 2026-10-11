@@ -1,5 +1,5 @@
 import { movementLoad } from "./weight.js?v=20261010-weight";
-import { createCollision } from "./collision.js?v=20261010-forest";
+import { createCollision } from "./collision.js?v=20261010-keeper";
 /*
  * MYSTERY ISLAND
  * Finger-drawn movement system

@@ -1,3 +1,4 @@
+import { civicObstacles } from "./civic.js?v=20261011-civic";
 import { forestObstacles, forestGatePosition, townWallObstacles, gatekeeperPosition } from "./world-layout.js?v=20261010-keeper";
 
 /*
@@ -19,6 +20,7 @@ export function createCollision(canvas, game) {
 const w = canvas.clientWidth;
 const h = canvas.clientHeight;
 
+    if (game.location === "townCivic") return civicObstacles(canvas);
     if (game.location === "forest") return forestObstacles(canvas);
 
     if (game.location === "homeInterior") {
@@ -358,4 +360,5 @@ const h = canvas.clientHeight;
     draw
   };
 }
+
 

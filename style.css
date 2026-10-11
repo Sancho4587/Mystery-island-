@@ -570,3 +570,22 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 .sleep-illustration {display:block;width:100%;height:auto;max-height:52dvh;object-fit:contain;border-radius:16px;}
 .sleep-screen .time-card p {margin:18px 0;color:#e3dfd6;}
 .sleep-screen .game-button {max-width:340px;margin:16px auto 0;background:#3e5069;border-color:#8190a5;}
+
+.civic-actions {position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 94px);z-index:9;display:flex;gap:8px;width:max-content;max-width:94vw;}
+.civic-actions button {white-space:normal;font-size:13px;}
+.civic-overlay {position:absolute;inset:0;z-index:45;background:#142d28d9;display:flex;justify-content:center;align-items:center;padding:16px;}
+.civic-card {width:min(94vw,740px);max-height:90dvh;overflow:auto;overscroll-behavior:contain;padding:clamp(16px,3vw,26px);border-radius:24px;background:#f5edda;color:#263e32;border:2px solid #b4ae87;}
+.civic-card h2 {margin:0 0 14px;font-size:24px;}
+.civic-card p {line-height:1.55;}
+.civic-card button {display:block;width:100%;margin-top:10px;text-align:left;white-space:normal;}
+.civic-scene {width:100%;height:auto;max-height:38dvh;object-fit:contain;border-radius:14px;display:block;}
+.civic-card details {padding:12px 0;border-bottom:1px solid #d1c7aa;line-height:1.45;}
+.civic-card summary {cursor:pointer;min-height:40px;}
+.discovery-grid {display:grid;grid-template-columns:repeat(10,1fr);max-width:280px;aspect-ratio:10/12;border-radius:12px;overflow:hidden;background:#adc499;}
+.discovery-grid .unexplored {background:#263e3c;}
+.discovery-grid .explored {background:#bdd0a8;border:1px solid #afc497;}
+.civic-map {margin-top:20px;}
+.civic-map p {font-size:13px;}
+
+
+.discovery-grid span {display:grid;place-items:center;font-size:16px;color:#2469a0;}

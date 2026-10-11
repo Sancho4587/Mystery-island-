@@ -1,7 +1,9 @@
+import { drawForest } from "./forest.js?v=20261010-forest";
+import { forestGatePosition, forestExitPosition } from "./world-layout.js?v=20261010-forest";
 import { getCarriedLoad, CARRY_LIMIT_KG, itemWeight, formatWeight } from "./weight.js?v=20261010-weight";
 import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-weight";
-import { createMovement } from "./movement.js?v=20261010-weight";
-import { drawTown } from "./town.js?v=20261009";
+import { createMovement } from "./movement.js?v=20261010-forest";
+import { drawTown } from "./town.js?v=20261010-forest";
 import { drawHome } from "./home.js?v=20261009";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
@@ -28,6 +30,7 @@ const game = {
   running: true,
   location: "town",
   returnPosition: null,
+  world: { forestGateOpen: false, forestVisited: false },
   player: {
     x: 220,
     y: 180,
@@ -94,7 +97,7 @@ const inventoryUI = createInventoryUI({
   },
   inspectKey: () => {
     closePanels();
-    openStoryDialogue("Маленький ключ, найденный в углублении у фонтана благодаря старой записке.", {
+    openStoryDialogue("Маленький ключ, найденный у фонтана. На его головке выгравирован знак ели.", {
       kind: "item", title: "Первый ключ", symbol: "🗝️", status: "Вес: " + formatWeight(itemWeight({ id: "first-key" })), returnPanel: "backpack"
     });
   }
@@ -105,22 +108,30 @@ function renderInventory() {
 }
 
 function getAdventureProgress() {
-  const hasKey = game.inventory.some(item => item.id === "first-key");
+  const opened = game.world.forestGateOpen;
+  const visited = game.world.forestVisited;
+  const hasKey = opened || game.inventory.some(item => item.id === "first-key");
   const hasNote = hasKey || game.inventory.some(item => item.id === "old-note");
   return {
     hasNote, hasKey,
-    completed: hasKey ? 2 : hasNote ? 1 : 0,
-    goal: hasKey ? "Первый ключ найден!" : hasNote ? "Разгадай записку" : "Осмотри семейный дом",
-    detail: hasKey
-      ? "Ты связала подсказку с шумом воды и нашла ключ у фонтана. Он сохранён в рюкзаке. Эта часть приключения завершена."
-      : hasNote
-        ? "Перечитай записку и найди в городе место, которое подходит под её описание."
-        : "Начни с дома: подойди к сундуку и осмотри его.",
+    completed: visited ? 4 : opened ? 3 : hasKey ? 2 : hasNote ? 1 : 0,
+    goal: visited ? "Лесная поляна открыта" : opened ? "Войди в лес" : hasKey ? "Найди замок со знаком ели" : hasNote ? "Разгадай записку" : "Осмотри семейный дом",
+    detail: visited ? "Ты открыла лесную калитку и добралась до поляны. Этот этап завершён. Дорожка с указателем ведёт обратно в город."
+      : opened ? "Калитка открыта. Подойди к ней и выбери «Войти в лес»."
+      : hasKey ? "На ключе выгравирована ель. Осмотри калитку со знаком ели на правой стороне города."
+      : hasNote ? "Перечитай записку и найди в городе место, которое подходит под её описание."
+      : "Начни с дома: подойди к сундуку и осмотри его.",
     steps: [
       { text: "Найти старую записку", done: hasNote },
-      { text: hasKey ? "Найти первый ключ у фонтана" : "Разгадать записку", done: hasKey }
+      { text: hasKey ? "Найти первый ключ у фонтана" : "Разгадать записку", done: hasKey },
+      { text: hasKey ? "Открыть лесную калитку" : "Найти применение ключу", done: opened },
+      { text: opened ? "Добраться до лесной поляны" : "Открыть новую локацию", done: visited }
     ]
   };
+}
+
+function locationName() {
+  return game.location === "forest" ? "Лесная поляна" : game.location === "homeInterior" ? "Семейный дом" : "Родной город";
 }
 
 function renderMap() {
@@ -130,13 +141,13 @@ function renderMap() {
 
   const location = document.createElement("p");
   location.className = "journal-location";
-  location.textContent = "📍 " + (game.location === "homeInterior" ? "Семейный дом · Родной город" : "Родной город");
+  location.textContent = "📍 " + locationName();
 
   const heading = document.createElement("h3");
   heading.textContent = "Первый ключ";
   const summary = document.createElement("p");
   summary.className = "journal-progress";
-  summary.textContent = "Пройдено шагов: " + progress.completed + " из 2";
+  summary.textContent = "Пройдено шагов: " + progress.completed + " из 4";
 
   const objective = document.createElement("section");
   objective.className = "journal-objective";
@@ -173,6 +184,8 @@ function renderMap() {
 function drawTemporaryWorld() {
   if (game.location === "homeInterior") {
     drawHome(context, canvas, game);
+  } else if (game.location === "forest") {
+    drawForest(context, canvas, game);
   } else {
     drawTown(context, canvas, game);
   }
@@ -394,10 +407,52 @@ fountainButton.addEventListener("click", () => {
   }
   game.inventory.push({ id: "first-key", name: "Первый ключ", icon: "🗝️", quantity: 1, unit: "шт." });
   saveGame({ silent: true });
-  openStoryDialogue("Записка привела тебя к шуму воды. Осмотрев каменный край фонтана, ты замечаешь в углублении маленький ключ.", {
+  openStoryDialogue("Записка привела тебя к шуму воды. Осмотрев каменный край фонтана, ты замечаешь в углублении маленький ключ со знаком ели.", {
     kind: "item", title: "Первый ключ найден!", symbol: "🗝️",
     status: "Ключ добавлен в рюкзак."
   });
+});
+
+// The first key opens a persistent route out of town.
+const forestButton = document.createElement("button");
+forestButton.type = "button";
+forestButton.className = "game-button hidden";
+forestButton.style.cssText = chestButton.style.cssText;
+document.getElementById("game-screen").appendChild(forestButton);
+
+function isNearForestPassage() {
+  if (game.location !== "town" && game.location !== "forest") return false;
+  const point = game.location === "town" ? forestGatePosition(canvas) : forestExitPosition(canvas);
+  return Math.hypot(game.player.x - point.x, game.player.y - point.y) <= 65;
+}
+
+forestButton.addEventListener("click", () => {
+  if (!game.running || !isNearForestPassage()) return;
+  movement.cancel();
+  if (game.location === "forest") {
+    game.location = "town";
+    const gate = forestGatePosition(canvas);
+    game.player.x = gate.x;
+    game.player.y = gate.y + 22;
+    saveGame({ silent: true });
+    return;
+  }
+  if (!game.world.forestGateOpen) {
+    if (!game.inventory.some(item => item.id === "first-key")) {
+      openStoryDialogue("На замке вырезан знак ели. Калитка заперта: нужен подходящий ключ.", { title: "Лесная калитка", symbol: "🔒" });
+      return;
+    }
+    game.world.forestGateOpen = true;
+    saveGame({ silent: true });
+    openStoryDialogue("Знаки на ключе и замке совпали. Ключ повернулся — путь в лес открыт!", { title: "Калитка открыта", symbol: "🌲", status: "Ключ остаётся в рюкзаке." });
+    return;
+  }
+  game.location = "forest";
+  game.world.forestVisited = true;
+  const exit = forestExitPosition(canvas);
+  game.player.x = exit.x;
+  game.player.y = exit.y;
+  saveGame({ silent: true });
 });
 
 // Automatic exit transition
@@ -472,6 +527,10 @@ function updatePlayerStatus() {
 function gameLoop(timestamp) {
     movement.update(timestamp);
   updatePlayerStatus();
+  const locationLabel = document.getElementById("location-name");
+  if (locationLabel.textContent !== locationName()) locationLabel.textContent = locationName();
+  forestButton.textContent = game.location === "forest" ? "↩ В город" : game.world.forestGateOpen ? "🌲 Войти в лес" : "🔒 Осмотреть калитку";
+  forestButton.classList.toggle("hidden", !game.running || !isNearForestPassage());
   chestButton.classList.toggle("hidden", !game.running || !isNearChest());
   fountainButton.classList.toggle("hidden", !game.running || !isNearFountain());
   if (game.location === "town") {
@@ -507,6 +566,7 @@ function saveGame({ silent = false } = {}) {
         location: game.location,
         returnPosition: game.returnPosition,
         player: game.player,
+        world: game.world,
         equipment: game.equipment,
         inventory: game.inventory
       })
@@ -529,7 +589,8 @@ function loadGame() {
 
     if (
   data.location === "town" ||
-  data.location === "homeInterior"
+  data.location === "homeInterior" ||
+  data.location === "forest"
 ) {
   game.location = data.location;
 }
@@ -554,6 +615,16 @@ if (
       };
     }
 
+    game.world = {
+      forestGateOpen: data.world?.forestGateOpen === true,
+      forestVisited: data.world?.forestVisited === true && data.world?.forestGateOpen === true
+    };
+    if (game.location === "forest" && !game.world.forestGateOpen) {
+      game.location = "town";
+      const gate = forestGatePosition(canvas);
+      game.player.x = gate.x;
+      game.player.y = gate.y + 22;
+    }
     game.player.maxStamina = 100;
     game.player.stamina = Number.isFinite(game.player.stamina) ? Math.max(0, Math.min(100, game.player.stamina)) : 100;
     game.player.maxCarryWeight = Number.isFinite(game.player.maxCarryWeight) && game.player.maxCarryWeight > 0

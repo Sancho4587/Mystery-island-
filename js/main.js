@@ -229,6 +229,7 @@ storyClose.addEventListener("click", closeStoryDialogue);
 function openStoryDialogue(text) {
   movement.cancel();
   storyPreviousFocus = document.activeElement;
+  dialogueOverlay.dataset.location = game.location;
   storyText.textContent = text;
   showMessage("");
   game.running = false;

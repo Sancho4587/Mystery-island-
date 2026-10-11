@@ -86,14 +86,20 @@ function renderInventory() {
   container.replaceChildren();
 
   game.inventory.forEach(item => {
-    const readable = item.id === "old-note";
+    const readable = item.id === "old-note" || item.id === "first-key";
     const slot = document.createElement(readable ? "button" : "div");
     if (readable) {
       slot.type = "button";
-      slot.setAttribute("aria-label", "Прочитать старую записку");
+      slot.setAttribute("aria-label", item.id === "old-note" ? "Прочитать старую записку" : "Осмотреть первый ключ");
       slot.addEventListener("click", () => {
         closePanels();
-        openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
+        if (item.id === "old-note") {
+          openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "backpack" });
+        } else {
+          openStoryDialogue("Маленький ключ, найденный в углублении у фонтана благодаря старой записке.", {
+            kind: "item", title: "Первый ключ", symbol: "🗝️", returnPanel: "backpack"
+          });
+        }
       });
     }
     slot.className = "inventory-slot";
@@ -114,12 +120,69 @@ function renderInventory() {
   });
 }
 
+function getAdventureProgress() {
+  const hasKey = game.inventory.some(item => item.id === "first-key");
+  const hasNote = hasKey || game.inventory.some(item => item.id === "old-note");
+  return {
+    hasNote, hasKey,
+    completed: hasKey ? 2 : hasNote ? 1 : 0,
+    goal: hasKey ? "Первый ключ найден!" : hasNote ? "Разгадай записку" : "Осмотри семейный дом",
+    detail: hasKey
+      ? "Ты связала подсказку с шумом воды и нашла ключ у фонтана. Он сохранён в рюкзаке. Эта часть приключения завершена."
+      : hasNote
+        ? "Перечитай записку и найди в городе место, которое подходит под её описание."
+        : "Начни с дома: подойди к сундуку и осмотри его.",
+    steps: [
+      { text: "Найти старую записку", done: hasNote },
+      { text: hasKey ? "Найти первый ключ у фонтана" : "Разгадать записку", done: hasKey }
+    ]
+  };
+}
+
 function renderMap() {
   const container = document.getElementById("world-map-container");
+  const progress = getAdventureProgress();
+  container.replaceChildren();
 
-  container.textContent =
-    "🗺️ Родной город — первая доступная локация. " +
-    "Остальные территории откроются по мере исследования.";
+  const location = document.createElement("p");
+  location.className = "journal-location";
+  location.textContent = "📍 " + (game.location === "homeInterior" ? "Семейный дом · Родной город" : "Родной город");
+
+  const heading = document.createElement("h3");
+  heading.textContent = "Первый ключ";
+  const summary = document.createElement("p");
+  summary.className = "journal-progress";
+  summary.textContent = "Пройдено шагов: " + progress.completed + " из 2";
+
+  const objective = document.createElement("section");
+  objective.className = "journal-objective";
+  const title = document.createElement("h4");
+  title.textContent = progress.goal;
+  const detail = document.createElement("p");
+  detail.textContent = progress.detail;
+  objective.append(title, detail);
+
+  const steps = document.createElement("ol");
+  steps.className = "journal-steps";
+  progress.steps.forEach(step => {
+    const row = document.createElement("li");
+    row.className = step.done ? "complete" : "pending";
+    row.textContent = (step.done ? "✓ " : "○ ") + step.text;
+    steps.appendChild(row);
+  });
+  container.append(location, heading, summary, objective, steps);
+
+  if (game.inventory.some(item => item.id === "old-note")) {
+    const readNote = document.createElement("button");
+    readNote.type = "button";
+    readNote.className = "game-button journal-read";
+    readNote.textContent = "📜 Перечитать записку";
+    readNote.addEventListener("click", () => {
+      closePanels();
+      openStoryDialogue(FIRST_CLUE, { kind: "scroll", title: "Старая записка", returnPanel: "map" });
+    });
+    container.appendChild(readNote);
+  }
 }
 
 

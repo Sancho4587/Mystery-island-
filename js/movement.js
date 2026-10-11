@@ -1,3 +1,4 @@
+import { movementLoad } from "./weight.js?v=20261010-weight";
 import { createCollision } from "./collision.js?v=20261009";
 /*
  * MYSTERY ISLAND
@@ -144,12 +145,18 @@ const collision = createCollision(canvas, game);
       return;
     }
 
-    const delta = Math.min((timestamp - lastTime) / 1000, 0.05);
+    const delta = Math.max(0, Math.min((timestamp - lastTime) / 1000, 0.05));
     lastTime = timestamp;
 
-    if (!game.running || !state.moving) return;
-
-    let remainingMovement = SPEED * delta;
+    if (!game.running) return;
+    if (!state.moving) {
+      game.player.stamina = Math.min(game.player.maxStamina, game.player.stamina + 6 * delta);
+      return;
+    }
+    const load = movementLoad(game);
+    const speed = SPEED * load.speedFactor;
+    let travelled = 0;
+    let remainingMovement = speed * delta;
 
     while (remainingMovement > 0 && state.moving) {
       const target = state.route[state.routeIndex];
@@ -177,6 +184,7 @@ const collision = createCollision(canvas, game);
         player.x = target.x;
         player.y = target.y;
 
+        travelled += gap;
         remainingMovement -= gap;
         state.routeIndex++;
 
@@ -202,10 +210,12 @@ const collision = createCollision(canvas, game);
 
         player.x = nextX;
         player.y = nextY;
+        travelled += remainingMovement;
         remainingMovement = 0;
       }
 
     }
+    game.player.stamina = Math.max(0, game.player.stamina - (travelled / speed) * load.drainPerSecond);
   }
 
   function draw(timestamp) {

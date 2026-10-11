@@ -1,9 +1,11 @@
-import { drawForest } from "./forest.js?v=20261010-forest";
-import { forestGatePosition, forestExitPosition } from "./world-layout.js?v=20261010-forest";
+import { createCollision } from "./collision.js?v=20261010-keeper";
+import { locationTasks, transitionPermission, completeTask, restoreProgress } from "./progression.js?v=20261010-keeper";
+import { drawForest } from "./forest.js?v=20261010-keeper";
+import { forestGatePosition, forestExitPosition } from "./world-layout.js?v=20261010-keeper";
 import { getCarriedLoad, CARRY_LIMIT_KG, itemWeight, formatWeight } from "./weight.js?v=20261010-weight";
 import { createInventoryUI, DEFAULT_EQUIPMENT, normalizeEquipment } from "./inventory.js?v=20261010-weight";
-import { createMovement } from "./movement.js?v=20261010-forest";
-import { drawTown } from "./town.js?v=20261010-forest";
+import { createMovement } from "./movement.js?v=20261010-keeper";
+import { drawTown } from "./town.js?v=20261010-keeper";
 import { drawHome } from "./home.js?v=20261009";
 /*
  * MYSTERY ISLAND: THE LOST KEYS
@@ -31,6 +33,7 @@ const game = {
   location: "town",
   returnPosition: null,
   world: { forestGateOpen: false, forestVisited: false },
+  progress: { completed: [], visited: ["town"] },
   player: {
     x: 220,
     y: 180,
@@ -110,21 +113,22 @@ function renderInventory() {
 function getAdventureProgress() {
   const opened = game.world.forestGateOpen;
   const visited = game.world.forestVisited;
-  const hasKey = opened || game.inventory.some(item => item.id === "first-key");
-  const hasNote = hasKey || game.inventory.some(item => item.id === "old-note");
+  const tasks = locationTasks(game, "town");
+  const hasKey = tasks.find(task => task.id === "town-key").done;
+  const hasNote = tasks.find(task => task.id === "town-note").done;
   return {
     hasNote, hasKey,
     completed: visited ? 4 : opened ? 3 : hasKey ? 2 : hasNote ? 1 : 0,
-    goal: visited ? "Лесная поляна открыта" : opened ? "Войди в лес" : hasKey ? "Найди замок со знаком ели" : hasNote ? "Разгадай записку" : "Осмотри семейный дом",
-    detail: visited ? "Ты открыла лесную калитку и добралась до поляны. Этот этап завершён. Дорожка с указателем ведёт обратно в город."
-      : opened ? "Калитка открыта. Подойди к ней и выбери «Войти в лес»."
-      : hasKey ? "На ключе выгравирована ель. Осмотри калитку со знаком ели на правой стороне города."
+    goal: visited ? "Лесная поляна открыта" : opened ? "Войди в лес" : hasKey ? "Поговори с хранителем ворот" : hasNote ? "Разгадай записку" : "Осмотри семейный дом",
+    detail: visited ? "Ты завершила основные дела города и добралась до поляны. Этот этап завершён. Дорожка с указателем ведёт обратно в город."
+      : opened ? "Ворота открыты. Поговори с хранителем, чтобы отправиться в лес."
+      : hasKey ? "Ты нашла ключ. Хранитель у ворот на правой стороне города поможет подготовиться к следующему этапу."
       : hasNote ? "Перечитай записку и найди в городе место, которое подходит под её описание."
       : "Начни с дома: подойди к сундуку и осмотри его.",
     steps: [
       { text: "Найти старую записку", done: hasNote },
       { text: hasKey ? "Найти первый ключ у фонтана" : "Разгадать записку", done: hasKey },
-      { text: hasKey ? "Открыть лесную калитку" : "Найти применение ключу", done: opened },
+      { text: hasKey ? "Завершить дела города и открыть ворота" : "Найти применение ключу", done: opened },
       { text: opened ? "Добраться до лесной поляны" : "Открыть новую локацию", done: visited }
     ]
   };
@@ -233,6 +237,8 @@ homeButton.addEventListener("click", () => {
     return;
   }
 
+  if (!transitionPermission(game, "town", "homeInterior").allowed) return;
+
   game.returnPosition = {
     x: game.player.x,
     y: game.player.y
@@ -288,12 +294,15 @@ dialogueOverlay.innerHTML = `
     </div>
     <div class="story-actions">
       <p class="story-status hidden"></p>
+      <button class="game-button story-action hidden" type="button"></button>
       <button class="game-button story-close" type="button">Понятно</button>
     </div>
   </div>`;
 document.getElementById("game-screen").appendChild(dialogueOverlay);
 const storyText = dialogueOverlay.querySelector("#story-text");
 const storyClose = dialogueOverlay.querySelector(".story-close");
+const storyAction = dialogueOverlay.querySelector(".story-action");
+let storyActionHandler = null;
 const storyStatus = dialogueOverlay.querySelector(".story-status");
 const storyTitle = dialogueOverlay.querySelector("#story-title");
 const storySymbol = dialogueOverlay.querySelector(".story-symbol");
@@ -301,6 +310,7 @@ let storyReturnPanel = null;
 let storyPreviousFocus = null;
 function closeStoryDialogue() {
   dialogueOverlay.classList.add("hidden");
+  storyActionHandler = null;
   game.running = true;
   if (storyReturnPanel) {
     const panel = storyReturnPanel;
@@ -312,7 +322,12 @@ function closeStoryDialogue() {
   if (storyPreviousFocus && storyPreviousFocus.isConnected) storyPreviousFocus.focus();
 }
 storyClose.addEventListener("click", closeStoryDialogue);
-function openStoryDialogue(text, { kind = "message", status = "", title = "Старая записка", symbol = "📜", returnPanel = null } = {}) {
+storyAction.addEventListener("click", () => {
+  const action = storyActionHandler;
+  closeStoryDialogue();
+  if (action) action();
+});
+function openStoryDialogue(text, { kind = "message", status = "", title = "Старая записка", symbol = "📜", returnPanel = null, action = null, closeLabel = "Понятно" } = {}) {
   movement.cancel();
   storyPreviousFocus = document.activeElement;
   dialogueOverlay.dataset.location = game.location;
@@ -320,6 +335,10 @@ function openStoryDialogue(text, { kind = "message", status = "", title = "Ст�
   storyTitle.textContent = title;
   storySymbol.textContent = symbol;
   storyReturnPanel = returnPanel;
+  storyClose.textContent = closeLabel;
+  storyActionHandler = action?.run || null;
+  storyAction.textContent = action?.label || "";
+  storyAction.classList.toggle("hidden", !action);
   storyStatus.textContent = status;
   storyStatus.classList.toggle("hidden", !status);
   storyText.textContent = text;
@@ -365,6 +384,7 @@ chestButton.addEventListener("click", () => {
       quantity: 1,
       unit: "шт."
     });
+    completeTask(game, "town-note");
     saveGame({ silent: true });
     openStoryDialogue(FIRST_CLUE, {
       kind: "scroll", status: "Записка добавлена в рюкзак!"
@@ -405,6 +425,7 @@ fountainButton.addEventListener("click", () => {
     });
     return;
   }
+  completeTask(game, "town-key");
   game.inventory.push({ id: "first-key", name: "Первый ключ", icon: "🗝️", quantity: 1, unit: "шт." });
   saveGame({ silent: true });
   openStoryDialogue("Записка привела тебя к шуму воды. Осмотрев каменный край фонтана, ты замечаешь в углублении маленький ключ со знаком ели.", {
@@ -426,33 +447,67 @@ function isNearForestPassage() {
   return Math.hypot(game.player.x - point.x, game.player.y - point.y) <= 65;
 }
 
-forestButton.addEventListener("click", () => {
-  if (!game.running || !isNearForestPassage()) return;
+function enterForest() {
+  if (game.location !== "town" || !isNearForestPassage()) return;
+  if (!transitionPermission(game, "town", "forest").allowed) { speakToGatekeeper(); return; }
   movement.cancel();
-  if (game.location === "forest") {
-    game.location = "town";
-    const gate = forestGatePosition(canvas);
-    game.player.x = gate.x;
-    game.player.y = gate.y + 22;
-    saveGame({ silent: true });
-    return;
-  }
-  if (!game.world.forestGateOpen) {
-    if (!game.inventory.some(item => item.id === "first-key")) {
-      openStoryDialogue("На замке вырезан знак ели. Калитка заперта: нужен подходящий ключ.", { title: "Лесная калитка", symbol: "🔒" });
-      return;
-    }
-    game.world.forestGateOpen = true;
-    saveGame({ silent: true });
-    openStoryDialogue("Знаки на ключе и замке совпали. Ключ повернулся — путь в лес открыт!", { title: "Калитка открыта", symbol: "🌲", status: "Ключ остаётся в рюкзаке." });
-    return;
-  }
-  game.location = "forest";
+  game.world.forestGateOpen = true;
   game.world.forestVisited = true;
+  if (!game.progress.visited.includes("forest")) game.progress.visited.push("forest");
+  game.location = "forest";
   const exit = forestExitPosition(canvas);
   game.player.x = exit.x;
   game.player.y = exit.y;
   saveGame({ silent: true });
+}
+
+function speakToGatekeeper() {
+  const permission = transitionPermission(game, "town", "forest");
+  if (!permission.allowed) {
+    const pending = permission.pending.map(task => task.label.toLowerCase()).join("; ");
+    const tasks = locationTasks(game, "town");
+    openStoryDialogue("За воротами начинается лес. Давай сначала завершим важные дела в городе. Тебе осталось: " + pending + ". Я подожду тебя здесь!", {
+      title: "Хранитель ворот", symbol: "🧙", kind: "keeper", closeLabel: "Я вернусь",
+      status: "Основные дела города: " + tasks.filter(task => task.done).length + " из " + tasks.length,
+      action: { label: "Посмотреть задания", run: () => openPanel("map") }
+    });
+    return;
+  }
+  if (!game.world.forestGateOpen) {
+    openStoryDialogue("Ты завершила все важные дела в городе! Знак ели на твоём ключе подходит к замку. Теперь ты готова к следующему этапу путешествия.", {
+      title: "Хранитель ворот", symbol: "🧙", kind: "keeper", closeLabel: "Останусь в городе",
+      action: { label: "Открыть ворота", run: () => {
+        if (game.location !== "town" || !isNearForestPassage()) return;
+        if (!transitionPermission(game, "town", "forest").allowed) { speakToGatekeeper(); return; }
+        game.world.forestGateOpen = true;
+        saveGame({ silent: true });
+        openStoryDialogue("Ворота открыты. В лесу тебя ждёт новая глава. Ты всегда можешь вернуться в город.", {
+          title: "Хранитель ворот", symbol: "🧙", kind: "keeper", closeLabel: "Останусь в городе",
+          action: { label: "Войти в лес", run: enterForest }
+        });
+      } }
+    });
+    return;
+  }
+  openStoryDialogue("Рад видеть тебя снова, путешественница! Путь в лес открыт. Возвращайся в город, когда захочешь.", {
+    title: "Хранитель ворот", symbol: "🧙", kind: "keeper", closeLabel: "Останусь в городе",
+    action: { label: "Войти в лес", run: enterForest }
+  });
+}
+
+forestButton.addEventListener("click", () => {
+  if (!game.running || !isNearForestPassage()) return;
+  movement.cancel();
+  if (game.location === "forest") {
+    if (!transitionPermission(game, "forest", "town").allowed) return;
+    game.location = "town";
+    const gate = forestGatePosition(canvas);
+    game.player.x = gate.x - 50;
+    game.player.y = gate.y;
+    saveGame({ silent: true });
+    return;
+  }
+  speakToGatekeeper();
 });
 
 // Automatic exit transition
@@ -463,6 +518,8 @@ function exitFamilyHome() {
   if (homeExitInProgress || game.location !== "homeInterior") {
     return;
   }
+
+  if (!transitionPermission(game, "homeInterior", "town").allowed) return;
 
   homeExitInProgress = true;
   chestButton.classList.add("hidden");
@@ -529,7 +586,7 @@ function gameLoop(timestamp) {
   updatePlayerStatus();
   const locationLabel = document.getElementById("location-name");
   if (locationLabel.textContent !== locationName()) locationLabel.textContent = locationName();
-  forestButton.textContent = game.location === "forest" ? "↩ В город" : game.world.forestGateOpen ? "🌲 Войти в лес" : "🔒 Осмотреть калитку";
+  forestButton.textContent = game.location === "forest" ? "↩ В город" : "🧙 Поговорить с хранителем";
   forestButton.classList.toggle("hidden", !game.running || !isNearForestPassage());
   chestButton.classList.toggle("hidden", !game.running || !isNearChest());
   fountainButton.classList.toggle("hidden", !game.running || !isNearFountain());
@@ -567,6 +624,7 @@ function saveGame({ silent = false } = {}) {
         returnPosition: game.returnPosition,
         player: game.player,
         world: game.world,
+        progress: game.progress,
         equipment: game.equipment,
         inventory: game.inventory
       })
@@ -622,8 +680,8 @@ if (
     if (game.location === "forest" && !game.world.forestGateOpen) {
       game.location = "town";
       const gate = forestGatePosition(canvas);
-      game.player.x = gate.x;
-      game.player.y = gate.y + 22;
+      game.player.x = gate.x - 50;
+      game.player.y = gate.y;
     }
     game.player.maxStamina = 100;
     game.player.stamina = Number.isFinite(game.player.stamina) ? Math.max(0, Math.min(100, game.player.stamina)) : 100;
@@ -634,6 +692,7 @@ if (
     if (Array.isArray(data.inventory)) {
       game.inventory = data.inventory;
     }
+    restoreProgress(game, data.progress);
   } catch (error) {
     console.error("Save loading failed:", error);
   }
@@ -679,8 +738,25 @@ document.getElementById("btn-save-exit").addEventListener(
 
 window.addEventListener("resize", resizeCanvas);
 
+function restoreSafeTownPosition() {
+  if (game.location !== "town") return;
+  const collision = createCollision(canvas, game);
+  if (!collision.isBlocked(game.player.x, game.player.y)) return;
+  let nearest = null;
+  let distance = Infinity;
+  for (let y = 130; y <= canvas.clientHeight - 110; y += 16) {
+    for (let x = 38; x <= canvas.clientWidth - 48; x += 16) {
+      if (collision.isBlocked(x, y)) continue;
+      const gap = Math.hypot(x - game.player.x, y - game.player.y);
+      if (gap < distance) { nearest = { x, y }; distance = gap; }
+    }
+  }
+  if (nearest) Object.assign(game.player, nearest);
+}
+
 resizeCanvas();
 loadGame();
+restoreSafeTownPosition();
 requestAnimationFrame(gameLoop);
 
 

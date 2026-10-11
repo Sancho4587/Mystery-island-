@@ -1,4 +1,4 @@
-import { forestGatePosition } from "./world-layout.js?v=20261010-forest";
+import { forestGatePosition, townWallObstacles, gatekeeperPosition } from "./world-layout.js?v=20261010-keeper";
 const TAU = Math.PI * 2;
 
 export function drawTown(context, canvas, game) {
@@ -13,7 +13,7 @@ export function drawTown(context, canvas, game) {
   drawGround(context, width, height);
   drawRoads(context, width, height);
   const gate = forestGatePosition(canvas);
-  drawRoad(context, [[width * 0.59, gate.y + 22], [gate.x, gate.y + 22]], 22);
+  drawRoad(context, [[width * 0.59, gate.y], [gate.x - 40, gate.y]], 22);
   drawVillageSquare(context, width, height, time);
 
   drawHouse(context, width * 0.20, height * 0.34, 1.05, {
@@ -53,7 +53,9 @@ export function drawTown(context, canvas, game) {
   drawBench(context, width * 0.28, height * 0.77, 0.9);
   drawBench(context, width * 0.52, height * 0.79, 0.9);
 
+  drawTownWalls(context, canvas);
   drawForestGate(context, gate, game.world.forestGateOpen);
+  drawGatekeeper(context, gatekeeperPosition(canvas));
   drawPlayer(context, game.player, time);
 }
 
@@ -663,21 +665,38 @@ function roundRect(ctx, x, y, width, height, radius) {
 
 function drawForestGate(ctx, gate, open) {
   const { x, y } = gate;
-  ctx.save();
-  ctx.fillStyle = '#725038';
-  ctx.fillRect(x - 42, y - 53, 9, 56);
-  ctx.fillRect(x + 33, y - 53, 9, 56);
-  ctx.strokeStyle = '#644a31'; ctx.lineWidth = 5;
-  const end = open ? x - 21 : x + 32;
-  for (const dy of [-31, -9]) {
-    ctx.beginPath(); ctx.moveTo(x - 32, y + dy); ctx.lineTo(end, y + dy + (open ? 24 : 0)); ctx.stroke();
-  }
+  ctx.save(); ctx.fillStyle = '#777b75';
+  ctx.fillRect(x - 12, y - 45, 24, 13); ctx.fillRect(x - 12, y + 32, 24, 13);
+  ctx.strokeStyle = '#604d37'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(x, y - 32);
+  ctx.lineTo(open ? x - 24 : x, open ? y - 20 : y + 32); ctx.stroke();
   if (!open) {
-    for (let dx = -24; dx <= 24; dx += 16) { ctx.fillRect(x + dx, y - 40, 4, 37); }
-    ctx.fillStyle = '#d3af55'; ctx.fillRect(x - 5, y - 23, 10, 12);
+    ctx.fillStyle = '#d3af55'; ctx.fillRect(x - 5, y - 5, 10, 12);
+    for (let dy = -24; dy <= 24; dy += 12) { ctx.beginPath(); ctx.moveTo(x - 6, y + dy); ctx.lineTo(x + 6, y + dy); ctx.stroke(); }
   }
-  ctx.fillStyle = '#f3e3b4'; ctx.fillRect(x - 46, y - 79, 92, 23);
-  ctx.fillStyle = '#365339'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('🌲 Лес', x, y - 63);
+  ctx.fillStyle = '#f3e3b4'; ctx.fillRect(x - 79, y - 72, 84, 22);
+  ctx.fillStyle = '#365339'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🌲 В лес', x - 37, y - 57);
   ctx.restore();
+}
+function drawTownWalls(ctx, canvas) {
+  ctx.save();
+  for (const wall of townWallObstacles(canvas)) {
+    ctx.fillStyle = '#747c76'; ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+    for (let row = 0; row < wall.height; row += 14) {
+      for (let col = 0; col < wall.width; col += 28) {
+        ctx.fillStyle = (row / 14 + col / 28) % 2 ? '#9fa69a' : '#adb2a6';
+        ctx.fillRect(wall.x + col + 1, wall.y + row + 1, Math.max(0, Math.min(26, wall.width-col-2)), Math.max(0, Math.min(12, wall.height-row-2)));
+      }
+    }
+  }
+  ctx.restore();
+}
+function drawGatekeeper(ctx, position) {
+  const { x, y } = position;
+  ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.17)'; ctx.beginPath(); ctx.ellipse(x, y + 3, 14, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#405b78'; ctx.beginPath(); ctx.moveTo(x-7,y-25); ctx.lineTo(x+7,y-25); ctx.lineTo(x+12,y); ctx.lineTo(x-12,y); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e5be8d'; ctx.beginPath(); ctx.arc(x,y-32,8,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#dedbd0'; ctx.beginPath(); ctx.moveTo(x-6,y-29); ctx.lineTo(x+6,y-29); ctx.lineTo(x,y-19); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#765b3c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x+16,y-34); ctx.lineTo(x+16,y+3); ctx.stroke();
+  ctx.fillStyle = '#fff5d8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Хранитель', x, y+20); ctx.restore();
 }

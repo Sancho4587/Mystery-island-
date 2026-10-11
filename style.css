@@ -447,3 +447,75 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 .journal-steps .complete { color: #245338; font-weight: 600; }
 .journal-steps .pending { color: #53594a; }
 .journal-read { width: 100%; white-space: normal; }
+
+/* RPG backpack: items on the left, equipped character on the right. */
+#backpack-panel { width: min(96vw, 1040px); max-height: 92dvh; padding: clamp(14px, 2vw, 24px); }
+#backpack-panel .panel-header { margin-bottom: 16px; }
+.backpack-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.backpack-layout h3 { font-size: 18px; margin: 0 0 12px; }
+.backpack-items, .character-equipment { min-width: 0; }
+#backpack-capacity { --capacity-color: #387451; padding: 12px; border: 1px solid #a7b88b; border-radius: 12px; background: #e8eed7; }
+#backpack-capacity[data-state="full"] { --capacity-color: #966315; border-color: #bc8b35; background: #fff0c7; }
+#backpack-capacity[data-state="over"] { --capacity-color: #a8372b; border-color: #ba594b; background: #ffe0d5; }
+.capacity-line { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; font-size: 13px; color: #24352e; }
+#capacity-status { color: var(--capacity-color); font-weight: 700; }
+#capacity-meter { display: block; width: 100%; height: 9px; margin-top: 10px; border: 0; border-radius: 5px; overflow: hidden; background: #cbd3ba; accent-color: var(--capacity-color); }
+#capacity-meter::-webkit-progress-bar { background: #cbd3ba; }
+#capacity-meter::-webkit-progress-value { background: var(--capacity-color); }
+#capacity-meter::-moz-progress-bar { background: var(--capacity-color); }
+.bag-stack-hint { margin: 8px 0 12px; font-size: 12px; color: #59624e; }
+#backpack-panel #inventory-container { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+#backpack-panel .inventory-slot { min-height: 96px; padding: 7px 4px; border-radius: 12px; overflow-wrap: anywhere; }
+#backpack-panel .empty-slot { min-height: 78px; border: 1px dashed #bbad8a; background: rgba(128,104,59,.05); }
+.item-quantity { font-size: 12px; color: #566148; }
+.character-equipment { border-left: 1px solid #cbbb94; padding-left: 20px; }
+.equipment-stage { position: relative; min-height: 360px; border-radius: 20px; background: radial-gradient(ellipse at 50% 55%, #edf1d7, #d6dfc1); border: 1px solid #afbc99; }
+.equipment-avatar { position: absolute; width: 48%; height: 270px; left: 26%; top: 60px; }
+#equipment-slots { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 90px 110px 110px; gap: 8px; padding: 12px; }
+.equipment-slot { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; border: 1px dashed #9aa68a; border-radius: 12px; padding: 6px 3px; background: rgba(247,248,230,.75); color: #42503c; font: inherit; overflow-wrap: anywhere; }
+.equipment-slot.occupied { border: 1px solid #b59b63; background: linear-gradient(#fff8df, #e7d7b0); cursor: pointer; box-shadow: 0 3px 5px #263b2914; }
+.equipment-label { font-size: 11px; font-weight: 700; }
+.equipment-icon { font-size: 26px; }
+.equipment-name { font-size: 10px; line-height: 1.2; }
+.equipment-head { grid-area: 1 / 2; }
+.equipment-body { grid-area: 2 / 1; }
+.equipment-hands { grid-area: 2 / 3; }
+.equipment-legs { grid-area: 3 / 1; }
+.equipment-back { grid-area: 3 / 3; }
+.equipment-feet { grid-area: 4 / 2; min-height: 78px; }
+.equipment-slot:focus-visible { outline: 3px solid #346fa9; outline-offset: 2px; }
+#equipment-summary { margin: 10px 0 0; text-align: center; font-size: 13px; }
+#inventory-details { margin-top: 18px; padding: 14px 16px; background: rgba(255,255,255,.45); border: 1px solid #cabb98; border-radius: 14px; }
+#inventory-details h3 { font-size: 17px; margin: 0 0 8px; }
+#inventory-details p { margin: 0 0 10px; line-height: 1.45; font-size: 14px; }
+#inventory-details p:last-child { margin-bottom: 0; }
+#inventory-details .capacity-warning { color: #943e24; font-weight: 600; }
+.equipment-action:disabled { cursor: not-allowed; opacity: .55; }
+@media (max-width: 650px) {
+  .backpack-layout { gap: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .character-equipment { padding-left: 9px; }
+  #backpack-panel #inventory-container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  #backpack-panel .inventory-slot { min-height: 78px; }
+  #backpack-panel .empty-slot { min-height: 50px; }
+  #backpack-panel .item-icon { font-size: 24px; }
+  #backpack-panel .item-name { font-size: 11px; }
+  #backpack-capacity { padding: 8px; }
+  .capacity-line { font-size: 11px; }
+  .equipment-stage { min-height: 420px; }
+  .equipment-avatar { width: 78%; left: 11%; height: 230px; top: 70px; }
+  #equipment-slots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 86px 86px 86px; gap: 6px; padding: 6px; }
+  .equipment-head { grid-area: 1 / 1; }
+  .equipment-body { grid-area: 2 / 1; }
+  .equipment-hands { grid-area: 1 / 2; }
+  .equipment-legs { grid-area: 3 / 1; }
+  .equipment-back { grid-area: 2 / 2; }
+  .equipment-feet { grid-area: 3 / 2; }
+  .equipment-slot { background: rgba(247,248,230,.88); }
+  .equipment-slot.occupied { background: rgba(247,235,202,.93); }
+}
+/* Keep the figure visible between slots on wide screens and above them on phones. */
+.equipment-avatar { top: 104px; height: 278px; }
+@media (max-width: 650px) {
+  .equipment-avatar { top: 4px; height: 200px; }
+  #equipment-slots { padding-top: 210px; }
+}

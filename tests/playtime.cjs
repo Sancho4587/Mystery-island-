@@ -13,19 +13,20 @@ assert.equal(run('allowance({weekday:60,weekend:120},new Date(2026,9,9))'),3600)
 assert.equal(run('allowance({weekday:60,weekend:120},new Date(2026,9,10))'),7200);
 assert.equal(run('allowance({weekday:60,weekend:120},new Date(2026,9,11))'),7200);
 run('const u={};charge(u,new Date(2026,9,9,23,59,30).getTime(),new Date(2026,9,10,0,0,30).getTime(),true)');assert.equal(run('u["2026-10-09"]'),30);assert.equal(run('u["2026-10-10"]'),30);
-ctx.opts={save:()=>saves++,pause:()=>paused=true,resume:()=>paused=false,active:()=>!paused,goHome(){},canGoHome:()=>true,sleep:()=>sleeps++};
+ctx.opts={atHome:()=>true,save:()=>saves++,pause:()=>paused=true,resume:()=>paused=false,active:()=>!paused,goHome(){},canGoHome:()=>true,sleep:()=>sleeps++};
 const api=run('createPlaytime(opts)');const overlay=nodes['game-app'].children[0],body=overlay.querySelector('#time-body');
 const btn=label=>{const e=body.children.find(x=>x.textContent===label);assert.ok(e,label);return e};
 now+=1000;interval();assert.equal(JSON.parse(storage['mystery-island-parent-v1']).usage['2026-10-09'],1);
 document.hidden=true;events.visibilitychange();now+=60000;interval();assert.equal(JSON.parse(storage['mystery-island-parent-v1']).usage['2026-10-09'],1);document.hidden=false;events.visibilitychange();
-now+=2999000;interval();assert.equal(overlay.querySelector('h2').textContent,'Пора подумать о ночлеге');btn('Продолжить').onclick();interval();now+=300000;interval();assert.ok(body.children.some(x=>x.textContent?.includes('5 мин.')));btn('Продолжить').onclick();interval();now+=300000;interval();assert.equal(api.blocked(),true);assert.ok(saves);
+now+=2999000;interval();assert.equal(overlay.querySelector('h2').textContent,'Пора подумать о ночлеге');btn('Продолжить').onclick();interval();now+=300000;interval();assert.ok(body.children.some(x=>x.textContent?.includes('5 мин.')));btn('Продолжить').onclick();interval();now+=300000;interval();assert.equal(api.blocked(),true);assert.ok(saves);assert.equal(overlay.classList.contains('sleep-screen'),false);
 (async()=>{
 api.openParents();let form=body.children.find(x=>x.tag==='form');form.children[0].value='1234';form.children[1].value='1234';await form.onsubmit({preventDefault(){}});assert.ok(JSON.parse(storage['mystery-island-parent-v1']).pin.digest);assert.ok(!storage['mystery-island-parent-v1'].includes('1234'));
 btn('Продолжить с оставшимся временем').onclick();assert.equal(api.blocked(),true);btn('Добавить 15 минут и продолжить').onclick();assert.equal(api.blocked(),false);
 api.openParents();form=body.children.find(x=>x.tag==='form');form.children[0].value='0000';await form.onsubmit({preventDefault(){}});assert.equal(form.children.at(-1).textContent,'Неверный PIN.');form.children[0].value='1234';await form.onsubmit({preventDefault(){}});btn('Готово').onclick();
-api.finishDay();btn('Лечь спать').onclick();assert.equal(sleeps,1);assert.equal(api.blocked(),true);assert.equal(JSON.parse(storage['mystery-island-parent-v1']).rest['2026-10-09'],true);
+api.finishDay();btn('Лечь спать').onclick();assert.equal(sleeps,1);assert.equal(overlay.classList.contains('sleep-screen'),true);assert.ok(body.children.some(x=>x.tag==='img'&&x.src.includes('sleep-home.svg')));assert.equal(api.blocked(),true);assert.equal(JSON.parse(storage['mystery-island-parent-v1']).rest['2026-10-09'],true);
 // A parent can undo accidental bedtime without granting extra minutes.
 api.openParents();form=body.children.find(x=>x.tag==='form');form.children[0].value='1234';await form.onsubmit({preventDefault(){}});
+assert.equal(overlay.classList.contains('sleep-screen'),false);
 const beforeResume=JSON.parse(storage['mystery-island-parent-v1']);
 btn('Продолжить с оставшимся временем').onclick();assert.equal(api.blocked(),false);
 const afterResume=JSON.parse(storage['mystery-island-parent-v1']);

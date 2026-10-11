@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+<title id="title">Спокойной ночи</title><desc id="desc">Девочка спит под зелёным одеялом. У её ног свернулся рыжий пушистый кот. За окном светят луна и звёзды.</desc>
+<defs>
+ <linearGradient id="room" x2="0" y2="1"><stop stop-color="#28334f"/><stop offset="1" stop-color="#60506a"/></linearGradient>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101c3c"/><stop offset="1" stop-color="#435f7e"/></linearGradient>
+ <linearGradient id="quilt" x2="0" y2="1"><stop stop-color="#76ac9d"/><stop offset="1" stop-color="#396d72"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ffe8af" stop-opacity=".35"/><stop offset="1" stop-color="#ffe8af" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="800" height="480" fill="url(#room)"/>
+<path d="M0 370H800V480H0Z" fill="#3d344a"/>
+<path d="M0 403H800M0 444H800M170 371L100 480M470 371L490 480M670 371L735 480" stroke="#665369" stroke-width="2" opacity=".45"/>
+<rect x="455" y="34" width="266" height="251" rx="100" fill="#716477"/>
+<rect x="467" y="46" width="242" height="227" rx="90" fill="url(#sky)"/>
+<circle cx="631" cy="112" r="64" fill="url(#glow)"/>
+<path d="M648 76a36 36 0 1 0 16 61 38 38 0 0 1-16-61" fill="#fff0b9"/>
+<g fill="#e6e8d0"><circle cx="513" cy="102" r="2"/><circle cx="560" cy="76" r="2"/><circle cx="685" cy="166" r="2"/><circle cx="585" cy="154" r="1.6"/><circle cx="535" cy="181" r="1.5"/><path d="m570 110 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/></g>
+<path d="M467 245l30-28 32 17 46-34 38 39 40-25 56 33v26H467Z" fill="#263e57"/>
+<path d="M588 47V273M467 188H709" stroke="#9a8990" stroke-width="9"/>
+<rect x="447" y="274" width="282" height="13" rx="5" fill="#b6a0a0"/>
+<path d="M435 27q30 89 4 244l40 0q-18-131 11-244M695 27q33 120 18 244h41q-24-133-8-244" fill="#918396"/>
+<path d="M448 36q15 100 1 207M733 37q-12 106 8 207" fill="none" stroke="#b2a1b1" stroke-width="4" opacity=".6"/>
+<!-- Bed and warm pillow -->
+<ellipse cx="377" cy="425" rx="290" ry="31" fill="#221f32" opacity=".4"/>
+<rect x="106" y="214" width="34" height="220" rx="15" fill="#a07868"/>
+<circle cx="123" cy="215" r="23" fill="#c69b7b"/>
+<rect x="120" y="270" width="519" height="130" rx="28" fill="#c4b1ae"/>
+<rect x="133" y="377" width="507" height="31" rx="9" fill="#a07868"/>
+<path d="M145 404v30m466-30v30" stroke="#a07868" stroke-width="22" stroke-linecap="round"/>
+<rect x="145" y="271" width="167" height="77" rx="34" fill="#f0dcc6" transform="rotate(-8 228 310)"/>
+<!-- Sleeping girl, face in profile -->
+<path d="M177 303q-18-70 48-78 71-4 70 62l-32 44Z" fill="#593f3c"/>
+<path d="M209 253q48-17 65 20l3 14 11 10-12 8q-9 31-42 26-39-8-38-40Z" fill="#e9b397"/>
+<path d="M200 292q5-44 48-42l25 18q-16-49-61-28-28 13-26 47Z" fill="#6c4840"/>
+<path d="M246 286q7 6 14 0" fill="none" stroke="#65433e" stroke-width="3" stroke-linecap="round"/>
+<path d="M260 310q7 3 12-1" fill="none" stroke="#ba7f70" stroke-width="2" stroke-linecap="round"/>
+<ellipse cx="244" cy="302" rx="9" ry="5" fill="#db8d84" opacity=".55"/>
+<!-- Quilt -->
+<path d="M287 293q101-38 197-3l117 9q37 3 37 47v39H278q-15-43 9-92Z" fill="url(#quilt)"/>
+<path d="M282 307q110-36 217-3l112 9" fill="none" stroke="#aed1b7" stroke-width="14"/>
+<path d="M326 320v61m57-69v69m59-68v68m59-59v59m60-55v55M291 349h338" stroke="#a1c0ae" stroke-width="2" opacity=".3"/>
+<path d="M286 310q17-12 35-7 9 6 2 12l-38 2" fill="#e9b397"/>
+<!-- Curled ginger Maine Coon -->
+<ellipse cx="553" cy="348" rx="62" ry="29" fill="#c9854f"/>
+<path d="M570 328q51 1 41 28-10 24-62 13" fill="none" stroke="#e4a363" stroke-width="19" stroke-linecap="round"/>
+<path d="m492 337-4-38 23 18 24-18 5 38q-17 35-48 0" fill="#e3a264"/>
+<path d="m489 301-5-10m52 10 5-10" stroke="#e3a264" stroke-width="3" stroke-linecap="round"/>
+<path d="m496 345 6 13 8-4 8 7 11-16" fill="#f1c38e"/>
+<path d="M498 332q5 4 10 0m13 0q5 4 10 0" stroke="#674538" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="m511 339 7 0-3 4Z" fill="#8d5949"/>
+<path d="m498 342-19-3m20 7-18 3m48-7 18-3m-18 7 18 3M550 326l5 10m14-11 5 10" stroke="#865a40" stroke-width="2" opacity=".7"/>
+<!-- bedside book -->
+<rect x="29" y="330" width="60" height="12" rx="3" fill="#b49b7a"/><path d="M37 341v66m43-66v66" stroke="#8b706b" stroke-width="9"/>
+<rect x="38" y="316" width="43" height="11" rx="2" fill="#b5b9a6"/>
+<path d="M42 319h34" stroke="#f1dcc0" stroke-width="3"/>
+</svg>

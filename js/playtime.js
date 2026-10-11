@@ -18,7 +18,7 @@ export function charge(usage, from, to, active) {
   }
 }
 
-export function createPlaytime({save, pause, resume, active, goHome, canGoHome, sleep, continueGame = resume}) {
+export function createPlaytime({save, pause, resume, active, goHome, canGoHome, sleep, continueGame = resume, atHome = () => false}) {
   const KEY = 'mystery-island-parent-v1';
   let data;
   try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
@@ -43,6 +43,7 @@ export function createPlaytime({save, pause, resume, active, goHome, canGoHome, 
     return Math.max(0, allowance(data.settings, now) + (data.extra[key] || 0)*60 - (data.usage[key] || 0));
   }
   function show(heading) {
+    overlay.classList.remove('sleep-screen');
     pause(); for (const child of document.getElementById('game-app').children) if(child!==overlay) child.inert=true; overlay.classList.remove('hidden'); title.textContent = heading; body.replaceChildren();
   }
   function text(value) { const p=document.createElement('p'); p.textContent=value; body.appendChild(p); }
@@ -50,7 +51,20 @@ export function createPlaytime({save, pause, resume, active, goHome, canGoHome, 
   function close() { parentOpen=false; authorized=false; overlay.classList.add('hidden'); for (const child of document.getElementById('game-app').children) if(child!==overlay) child.inert=false; resume(); }
   function stopScreen() {
     locked=true; parentOpen=false; authorized=false; save();
-    show('На сегодня приключение завершено');
+    const homeSleep = !!data.rest[dayKey(new Date())] && atHome();
+    show(homeSleep ? 'Спокойной ночи' : 'На сегодня приключение завершено');
+    if (homeSleep) {
+      overlay.classList.add('sleep-screen');
+      const scene = document.createElement('img');
+      scene.className = 'sleep-illustration';
+      scene.src = './assets/sleep-home.svg?v=20261011-night';
+      scene.alt = 'Девочка спит под одеялом, рядом свернулся рыжий кот. За окном — луна и звёзды.';
+      scene.width = 800; scene.height = 480;
+      body.appendChild(scene);
+      text('Приключение продолжится завтра. Твой прогресс сохранён.');
+      button('Родительские настройки', openParents);
+      return;
+    }
     text(data.rest[dayKey(new Date())]
       ? 'Вы выбрали «Лечь спать», поэтому игра остановлена до завтра. Если это было случайно, родитель может разрешить продолжение через PIN.'
       : 'Дневной лимит закончился. Родитель может добавить время через PIN.');

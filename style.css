@@ -433,3 +433,17 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 .story-overlay[data-kind="item"] .story-symbol { font-size: 72px; margin-bottom: 12px; }
 /* Keep transient messages above the nearby-object action buttons. */
 #game-message { bottom: calc(env(safe-area-inset-bottom) + 180px); }
+
+/* Adventure journal: progress is derived from the existing saved inventory. */
+#world-map-container { min-height: 0; background: rgba(255,255,255,.38); }
+.journal-location { margin: 0 0 16px; font-size: 14px; }
+#world-map-container h3 { margin: 0 0 6px; font-size: 23px; }
+.journal-progress { margin: 0 0 16px; font-size: 14px; }
+.journal-objective { padding: 16px; border-radius: 16px; background: #e4edcf; border: 1px solid #a4b68b; }
+.journal-objective h4 { margin: 0 0 8px; font-size: 18px; }
+.journal-objective p { margin: 0; line-height: 1.5; }
+.journal-steps { padding: 0; margin: 18px 0; list-style: none; }
+.journal-steps li { padding: 8px 0; line-height: 1.4; }
+.journal-steps .complete { color: #245338; font-weight: 600; }
+.journal-steps .pending { color: #53594a; }
+.journal-read { width: 100%; white-space: normal; }

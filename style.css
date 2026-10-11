@@ -542,3 +542,10 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
 #load-warning:empty { display: none; }
 .item-weight { font-weight: 600; color: #4c6147; }
 @media(max-width:650px) { #carried-weight { padding: 8px; } #weight-total { font-size: 14px; } #weight-breakdown, #weight-status { font-size: 11px; } }
+.story-overlay[data-location="forest"] {
+  --story-ink: #293d23;
+  --story-start: #f2f2d9;
+  --story-end: #d2ddb2;
+  --story-border: #869b62;
+  --story-backdrop: rgba(12,35,22,.72);
+}

@@ -1,3 +1,4 @@
+import { forestGatePosition } from "./world-layout.js?v=20261010-forest";
 const TAU = Math.PI * 2;
 
 export function drawTown(context, canvas, game) {
@@ -11,6 +12,8 @@ export function drawTown(context, canvas, game) {
   drawMountains(context, width, height);
   drawGround(context, width, height);
   drawRoads(context, width, height);
+  const gate = forestGatePosition(canvas);
+  drawRoad(context, [[width * 0.59, gate.y + 22], [gate.x, gate.y + 22]], 22);
   drawVillageSquare(context, width, height, time);
 
   drawHouse(context, width * 0.20, height * 0.34, 1.05, {
@@ -50,6 +53,7 @@ export function drawTown(context, canvas, game) {
   drawBench(context, width * 0.28, height * 0.77, 0.9);
   drawBench(context, width * 0.52, height * 0.79, 0.9);
 
+  drawForestGate(context, gate, game.world.forestGateOpen);
   drawPlayer(context, game.player, time);
 }
 
@@ -372,7 +376,7 @@ function drawSmoke(ctx, x, y, scale) {
   ctx.restore();
 }
 
-function drawTree(ctx, x, y, scale, time, color) {
+export function drawTree(ctx, x, y, scale, time, color) {
   const sway = Math.sin(time * 1.6 + x * 0.02) * 3 * scale;
 
   ctx.save();
@@ -511,7 +515,7 @@ function drawLamp(ctx, x, y, time) {
   ctx.restore();
 }
 
-function drawRock(ctx, x, y, scale) {
+export function drawRock(ctx, x, y, scale) {
   ctx.save();
   ctx.fillStyle = "rgba(0,0,0,0.12)";
   ctx.beginPath();
@@ -581,7 +585,7 @@ function drawBench(ctx, x, y, scale) {
   ctx.restore();
 }
 
-function drawPlayer(ctx, player, time) {
+export function drawPlayer(ctx, player, time) {
   const pulse = 1 + Math.sin(time * 4) * 0.08;
 
   ctx.save();
@@ -655,4 +659,25 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+function drawForestGate(ctx, gate, open) {
+  const { x, y } = gate;
+  ctx.save();
+  ctx.fillStyle = '#725038';
+  ctx.fillRect(x - 42, y - 53, 9, 56);
+  ctx.fillRect(x + 33, y - 53, 9, 56);
+  ctx.strokeStyle = '#644a31'; ctx.lineWidth = 5;
+  const end = open ? x - 21 : x + 32;
+  for (const dy of [-31, -9]) {
+    ctx.beginPath(); ctx.moveTo(x - 32, y + dy); ctx.lineTo(end, y + dy + (open ? 24 : 0)); ctx.stroke();
+  }
+  if (!open) {
+    for (let dx = -24; dx <= 24; dx += 16) { ctx.fillRect(x + dx, y - 40, 4, 37); }
+    ctx.fillStyle = '#d3af55'; ctx.fillRect(x - 5, y - 23, 10, 12);
+  }
+  ctx.fillStyle = '#f3e3b4'; ctx.fillRect(x - 46, y - 79, 92, 23);
+  ctx.fillStyle = '#365339'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('🌲 Лес', x, y - 63);
+  ctx.restore();
 }

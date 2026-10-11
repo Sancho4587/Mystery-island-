@@ -549,3 +549,6 @@ button.inventory-slot:focus-visible { outline: 3px solid var(--sky); outline-off
   --story-border: #869b62;
   --story-backdrop: rgba(12,35,22,.72);
 }
+.story-action { width: 100%; max-width: 300px; white-space: normal; }
+.story-overlay[data-kind="keeper"] .story-card p { font-size: clamp(16px, 2.5vw, 19px); }
+.story-overlay[data-kind="keeper"] .story-close { background: #e5e7cb; color: #33432e; border-color: #a5b28e; }

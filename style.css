@@ -351,7 +351,12 @@ button {
   align-items: center;
   justify-content: center;
   padding: max(20px, env(safe-area-inset-top)) 18px max(20px, env(safe-area-inset-bottom));
-  background: rgba(9, 30, 26, 0.67);
+  --story-ink: #3d382b;
+  --story-start: #fff9e9;
+  --story-end: #f1dfb6;
+  --story-border: #c5a775;
+  --story-backdrop: rgba(36, 24, 15, 0.67);
+  background: var(--story-backdrop);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   animation: story-fade 220ms ease-out both;
@@ -362,9 +367,9 @@ button {
   overflow-y: auto;
   padding: clamp(22px, 5vw, 36px);
   text-align: center;
-  color: #3d382b;
-  background: linear-gradient(150deg, #fff9e9, #f1dfb6);
-  border: 2px solid #c5a775;
+  color: var(--story-ink);
+  background: linear-gradient(150deg, var(--story-start), var(--story-end));
+  border: 2px solid var(--story-border);
   border-radius: 26px;
   box-shadow: 0 22px 65px rgba(0,0,0,.43), inset 0 2px 0 rgba(255,255,255,.85);
   animation: story-rise 260ms ease-out both;
@@ -377,4 +382,13 @@ button {
 @keyframes story-rise { from {opacity:0;transform:translateY(16px) scale(.97)} to {opacity:1;transform:translateY(0) scale(1)} }
 @media (prefers-reduced-motion: reduce) {
   .story-overlay,.story-card { animation: none; }
+}
+
+/* Dialogue palette follows the location at the moment it opens. */
+.story-overlay[data-location="town"] {
+  --story-ink: #193d32;
+  --story-start: #f0f9e9;
+  --story-end: #cde3bf;
+  --story-border: #7ca477;
+  --story-backdrop: rgba(9, 30, 26, 0.67);
 }
